@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>今日热榜 · 全网热点实时聚合</title>
+<meta name="description" content="聚合微博、知乎、百度、B站、Hacker News、Product Hunt 等 28 个平台的实时热榜，每 5 分钟自动刷新。">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f2ec">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#131519">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e8442e' d='M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z'/%3E%3C/svg%3E">
+<script>
+/* 主题预渲染：避免闪烁（必须内联，先于样式执行） */
+(function(){try{var t=localStorage.getItem('hotboard-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='light';}})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-qingke-huangyou@5/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/700.css">
+<link rel="stylesheet" href="hot.css">
+</head>
+<body>
+<div class="heatline" aria-hidden="true"></div>
+
+<header class="topbar">
+  <span class="wm" aria-hidden="true">热</span>
+  <div class="wrap">
+    <div class="brand">
+      <svg class="flame" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></svg>
+      <div>
+        <h1>今日<em>热榜</em></h1>
+        <p class="tag">全网热点 · 实时聚合</p>
+      </div>
+    </div>
+    <div class="hd-right">
+      <div class="clock">
+        <div class="time" id="clock-time">--<i>:</i>--<i>:</i>--</div>
+        <div class="date" id="clock-date">加载中…</div>
+      </div>
+      <button class="iconbtn" id="btn-refresh" aria-label="刷新全部榜单" title="刷新全部榜单">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/></svg>
+      </button>
+      <button class="iconbtn tbtn" id="btn-theme" aria-label="切换深浅主题" title="切换主题">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="ticker" aria-label="实时热点滚动条">
+  <div class="tk-label"><span class="dot" aria-hidden="true"></span><span>实时热点</span></div>
+  <div class="tk-view">
+    <div class="tk-track" id="tk-track"><span class="tk-empty">正在汇聚全网热点…</span></div>
+  </div>
+</div>
+
+<nav class="controls" aria-label="筛选与搜索">
+  <div class="wrap">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="q" placeholder="搜索热榜关键词…" aria-label="搜索热榜" autocomplete="off">
+      <button class="clr" id="q-clr" aria-label="清空搜索">×</button>
+      <kbd>/</kbd>
+    </div>
+    <span class="sstat" id="sstat" hidden></span>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="next">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <b id="cd">05:00</b><span>后自动刷新</span>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div id="board"></div>
+</main>
+
+<div class="floats">
+  <button class="fbtn" id="f-top" aria-label="回到顶部" title="回到顶部">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-7 7 7-7 7 7"/></svg>
+  </button>
+  <button class="fbtn" id="f-bottom" aria-label="到页面底部" title="到底部">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m7-7-7 7-7-7"/></svg>
+  </button>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p class="fbrand">今日<em>热榜</em> · 风从远方来</p>
+    <p>数据来自 <a href="https://api.codelife.cc" target="_blank" rel="noopener noreferrer">Codelife 开放接口</a>（主）与 <a href="https://orz.ai" target="_blank" rel="noopener noreferrer">orz.ai DailyNews</a>（备）· 海外榜单取自 <a href="https://hn.algolia.com" target="_blank" rel="noopener noreferrer">HN Algolia</a> 与 <a href="https://dev.to" target="_blank" rel="noopener noreferrer">dev.to</a> 官方 API</p>
+    <p>每 5 分钟自动刷新 · 点击榜单名称访问官方热榜 · 按 <kbd>/</kbd> 快速搜索</p>
+    <p class="fstats" aria-label="站点运行状态">
+      <span class="fstat" title="自 2026-07-20 起持续运行">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        已运行 <b id="stat-uptime">--</b>
+      </span>
+      <span class="fsep" aria-hidden="true">/</span>
+      <span class="fstat" title="本次页面打开耗时">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        本次加载 <b id="stat-load">…</b>
+      </span>
+    </p>
+    <p class="ai-badge" title="本页面由 AI 辅助生成">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5 13.9 8l5.6 1.9-5.6 1.9L12 17.4l-1.9-5.6L4.5 9.9 10.1 8 12 2.5zM19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6zM5 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2z"/></svg>
+      <span>本页面由 AI 生成</span>
+    </p>
+    <div class="disclaimer">
+      <strong>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5c0 4.6 3.2 8.4 7.5 10 4.3-1.6 7.5-5.4 7.5-10V6L12 3z"/></svg>
+        免责声明
+      </strong>
+      本页面为个人学习交流项目，所有榜单内容均实时抓取自第三方公开接口，本站不存储、不修改、不转载任何榜单内容，其著作权及相关权益归原平台所有；页面中出现的各平台名称、商标及标识归各自权利人所有。榜单数据可能存在延迟或误差，本站不作任何保证，亦不对因使用本页面信息产生的任何后果承担责任。如相关内容侵犯了您的合法权益，请联系本站删除。
+    </div>
+  </div>
+</footer>
+
+<div id="toasts" aria-live="polite"></div>
+<noscript><div class="ns">热榜需要 JavaScript 才能加载数据，请在浏览器中启用 JavaScript 后刷新页面。</div></noscript>
+
+<script src="hot.js"></script>
+</body>
+</html>

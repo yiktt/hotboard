@@ -172,15 +172,27 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .next b{font:700 13px var(--font-mono);color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* ============ 分类标题 ============ */
-.cat-label{display:flex;align-items:baseline;gap:12px;margin:30px 0 16px}
+.cat-label{display:flex;align-items:center;gap:12px;margin:30px 0 16px;font-weight:400}
+.cat-label.off{display:none}
 .cat-label:first-child{margin-top:22px}
-.cat-label .bar{width:9px;height:22px;border-radius:3px;background:linear-gradient(180deg,var(--accent),var(--accent2));align-self:center;flex:none}
-.cat-label h2{font-family:var(--font-display);font-weight:400;font-size:23px;letter-spacing:3px}
-.cat-label span{font:700 10px var(--font-mono);letter-spacing:3px;color:var(--muted)}
-.cat-label::after{content:"";flex:1;height:1px;background:var(--line);align-self:center}
+.cat-toggle{
+  display:inline-flex;align-items:center;gap:12px;padding:2px 0;
+  font:inherit;letter-spacing:inherit;color:inherit;text-align:left;border-radius:6px;
+  transition:color .2s ease;
+}
+.cat-toggle .bar{width:9px;height:22px;border-radius:3px;background:linear-gradient(180deg,var(--accent),var(--accent2));flex:none}
+.cat-name{font-family:var(--font-display);font-weight:400;font-size:23px;line-height:1.2;letter-spacing:3px}
+.cat-en{font:700 10px var(--font-mono);letter-spacing:3px;color:var(--muted);transition:color .2s ease}
+.cat-chev{width:13px;height:13px;flex:none;color:var(--muted);transition:transform .25s ease,color .2s ease}
+.cat-toggle:hover{color:var(--accent)}
+.cat-toggle:hover .cat-en,.cat-toggle:hover .cat-chev{color:var(--accent)}
+.cat-label.folded .cat-name{color:var(--muted)}
+.cat-label.folded .cat-chev{transform:rotate(-90deg)}
+.cat-label::after{content:"";flex:1;height:1px;background:var(--line)}
 
 /* ============ 卡片网格 ============ */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px;align-items:start}
+.grid.folded{display:none}
 .card{
   background:var(--card);border:1px solid var(--line);border-radius:14px;
   display:flex;flex-direction:column;overflow:hidden;
@@ -248,12 +260,26 @@ body.searching .ranklist li.hide{display:none}
 body.searching .ranklist li.over{display:none}
 .rk.hide{display:none}
 
-.card-ft{border-top:1px dashed var(--line)}
+.card-ft{border-top:1px dashed var(--line);margin:0;text-align:left}
 .more{
   width:100%;padding:9px;font-size:12px;color:var(--muted);letter-spacing:1px;
   transition:all .2s ease;
 }
 .more:hover{color:var(--accent);background:var(--accent-soft)}
+.card-ft.region{padding:7px 11px}
+.region-pick{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%}
+.region-cap{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);letter-spacing:.5px;white-space:nowrap}
+.region-cap svg{width:13px;height:13px;flex:none;color:var(--accent2)}
+.region-box{position:relative;display:inline-flex;align-items:center;min-width:0}
+.region-select{
+  appearance:none;-webkit-appearance:none;max-width:170px;
+  padding:5px 26px 5px 10px;border-radius:8px;border:1px solid var(--line);
+  background:var(--soft);color:var(--ink);font:500 12px var(--font-body);
+  cursor:pointer;text-overflow:ellipsis;transition:border-color .2s ease,background .2s ease;
+}
+.region-select:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:var(--accent-soft)}
+.region-select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.region-chev{position:absolute;right:8px;width:12px;height:12px;color:var(--muted);pointer-events:none}
 
 /* 骨架屏 */
 .sk{display:flex;align-items:center;gap:9px;padding:8.5px 9px}
@@ -447,7 +473,9 @@ noscript .ns{max-width:520px;margin:80px auto;text-align:center;font-size:15px;c
   .search{flex:1}
   .search input,.search input:focus{width:100%}
   .cat-label{margin:24px 0 12px}
-  .cat-label h2{font-size:20px;letter-spacing:2px}
+  .cat-name{font-size:20px;letter-spacing:2px}
+  .cat-toggle{gap:10px}
+  .cat-en{letter-spacing:2px}
   .grid{grid-template-columns:1fr;gap:14px}
   .card-hd{padding:13px 13px 9px}
   .pbadge{width:34px;height:34px;font-size:15px;border-radius:9px}
@@ -455,6 +483,8 @@ noscript .ns{max-width:520px;margin:80px auto;text-align:center;font-size:15px;c
   .card-bd{padding:2px 6px 6px}
   .rk{padding:8px}
   .rk-t{font-size:13px}
+  .card-ft.region{padding:7px 8px}
+  .region-select{max-width:145px}
   .floats{right:12px}
   .fbtn{width:42px;height:42px}
   footer{margin:34px 0 calc(24px + env(safe-area-inset-bottom))}

@@ -33,16 +33,31 @@ const SOURCES = [
   { id:'xueqiu',     cat:'news',   name:'雪球',          char:'雪', color:'#0089e0', sub:'今日投资话题',         cid:'X12owXzvNV', orz:'xueqiu',       home:'https://xueqiu.com/' },
   { id:'bili',       cat:'fun',    name:'哔哩哔哩',      char:'B',  color:'#fb7299', sub:'全站日榜',             cid:'74KvxwokxM', orz:'bilibili',     home:'https://www.bilibili.com/v/popular/rank/all' },
   { id:'douyin',     cat:'fun',    name:'抖音热点',      char:'抖', color:'#fe2c55', sub:'热门视频榜',           cid:'DpQvNABoNE', orz:'douyin',       home:'https://www.douyin.com/hot' },
-  { id:'douban',     cat:'fun',    name:'豆瓣电影',      char:'豆', color:'#42bd56', sub:'新片榜',               cid:'mDOvnyBoEB', orz:'douban',       home:'https://movie.douban.com/chart' },
+  { id:'douban',     cat:'fun',    name:'豆瓣电影',      char:'豆', color:'#42bd56', sub:'新片榜',               api:'douban',                        home:'https://movie.douban.com/chart' },
   { id:'hupu',       cat:'fun',    name:'虎扑步行街',    char:'虎', color:'#c7232c', sub:'步行街热帖',           cid:'G47o8weMmN', orz:'hupu',         home:'https://bbs.hupu.com/all-gambia' },
   { id:'weread',     cat:'fun',    name:'微信读书',      char:'读', color:'#00a99d', sub:'总榜',                 cid:'4KvxEX0dkx',                     home:'https://weread.qq.com/' },
   { id:'dongqiudi',  cat:'fun',    name:'懂球帝',        char:'球', color:'#16a34a', sub:'足球热点榜',           cid:'n3moBE1eN5', nohot:true,         home:'https://www.dongqiudi.com/' },
 ];
 
+/* 官方图标（本地资源，加载失败时回退为字符徽标） */
+const ICONS = {
+  weibo:'weibo.svg',       zhihu:'zhihu.png',       baidu:'baidu.png',       toutiao:'toutiao.png',
+  wechat:'wechat.svg',     smzdm:'smzdm.jpg',       tieba:'tieba.jpg',       github:'github.png',
+  juejin:'juejin.svg',     sspai:'sspai.png',       ithome:'ithome.png',     kr36:'kr36.jpg',
+  csdn:'csdn.svg',         zcool:'zcool.svg',       phunt:'phunt.svg',       appstore:'appstore.png',
+  hackernews:'hackernews.ico', devto:'devto.svg',   txnews:'txnews.png',     sina:'sina.png',
+  cbn:'cbn.png',           xueqiu:'xueqiu.jpg',     bili:'bili.png',         douyin:'douyin.png',
+  douban:'douban.svg',     hupu:'hupu.png',         weread:'weread.svg',     dongqiudi:'dongqiudi.png',
+};
+const iconURL = id => ICONS[id] ? `icons/${ICONS[id]}` : '';
+
 const API_CODELIFE = id => `https://api.codelife.cc/api/top/list?lang=cn&id=${encodeURIComponent(id)}`;
 const API_ORZ      = p  => `https://orz.ai/api/v1/dailynews/?platform=${encodeURIComponent(p)}`;
 const API_HN       = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=20';
 const API_DEVTO    = 'https://dev.to/api/articles?top=7&per_page=20';
+/* 豆瓣官方接口未开放 CORS，经 Redocly 公共代理读取官方页面 */
+const API_DOUBAN     = 'https://cors.redoc.ly/https://movie.douban.com/chart';
+const API_DOUBAN_HOT = 'https://cors.redoc.ly/https://movie.douban.com/j/search_subjects?type=movie&tag=%E7%83%AD%E9%97%A8&page_limit=20&page_start=0';
 const REFRESH_MS = 5 * 60 * 1000;
 const SHOW = 10;
 
@@ -51,6 +66,7 @@ const $  = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2,'0');
 const FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>';
+const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4-5.8-3-5.8 3 1.1-6.4L2.6 9.4l6.5-.9z"/></svg>';
 
 function fmtHot(h){
   if (h === null || h === undefined || h === '') return '';
@@ -68,6 +84,15 @@ async function getJSON(url, timeout = 12000){
     const res = await fetch(url, { signal: ctrl.signal, headers:{ Accept:'application/json' } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
+  } finally { clearTimeout(timer); }
+}
+async function getText(url, timeout = 15000){
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try{
+    const res = await fetch(url, { signal: ctrl.signal, headers:{ Accept:'text/html' } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.text();
   } finally { clearTimeout(timer); }
 }
 function toast(msg){
@@ -137,10 +162,13 @@ function listHTML(items){
   return '<ol class="ranklist' + (items.length > SHOW ? ' collapsed' : '') + '">' + items.map((it, i) => {
     const r = i + 1;
     const hot = fmtHot(it.hot);
+    const extra = it.score
+      ? `<span class="rk-h rk-score" title="豆瓣评分">${STAR}${esc(it.score)}</span>`
+      : hot ? `<span class="rk-h">${FLAME}${esc(hot)}</span>` : '';
     return `<li class="rk">
       <span class="rank${r <= 3 ? ' r'+r : ''}">${r}</span>
       <a class="rk-t" href="${esc(it.url || '#')}" target="_blank" rel="noopener noreferrer" title="${esc(it.title)}">${esc(it.title)}</a>
-      ${hot ? `<span class="rk-h">${FLAME}${esc(hot)}</span>` : ''}
+      ${extra}
     </li>`;
   }).join('') + '</ol>';
 }
@@ -149,9 +177,13 @@ function buildCard(src){
   el.className = 'card reveal';
   el.dataset.cat = src.cat;
   const small = src.char.length > 1 ? ' small' : '';
+  const icon = iconURL(src.id);
   el.innerHTML = `
     <header class="card-hd">
-      <span class="pbadge${small}" style="--pc:${src.color}">${esc(src.char)}</span>
+      <span class="pbadge${small}" style="--pc:${src.color}">
+        ${icon ? `<img src="${esc(icon)}" alt="" loading="lazy" decoding="async">` : ''}
+        <b>${esc(src.char)}</b>
+      </span>
       <div class="pmeta">
         <h3><a href="${esc(src.home)}" target="_blank" rel="noopener noreferrer" title="访问「${esc(src.name)}」官方榜单">${esc(src.name)}<svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a></h3>
         <p><span>${esc(src.sub)}</span><span class="ptime">加载中…</span></p>
@@ -162,16 +194,43 @@ function buildCard(src){
     </header>
     <div class="card-bd">${skeleton()}</div>
     <footer class="card-ft" hidden><button class="more"></button></footer>`;
+  const badge = el.querySelector('.pbadge');
+  if (!icon) badge.classList.add('noicon');
+  else badge.querySelector('img').addEventListener('error', () => badge.classList.add('noicon'));
   el.querySelector('.card-refresh').addEventListener('click', () => loadCard(src, el));
   el.querySelector('.more').addEventListener('click', function(){
     const ol = el.querySelector('.ranklist');
-    const open = ol.classList.toggle('collapsed');
-    this.textContent = open ? `展开全部（共 ${src._count} 条）` : '收起榜单';
+    const collapsed = ol.classList.toggle('collapsed');
+    if (qInput.value.trim()) applySearch();
+    else this.textContent = collapsed ? `展开全部（共 ${src._count} 条）` : '收起榜单';
   });
   cardMap.set(src.id, el);
   return el;
 }
+async function loadDouban(){
+  try{
+    const html = await getText(API_DOUBAN);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const title = [...doc.querySelectorAll('h2')].find(el => el.textContent.includes('豆瓣新片榜'));
+    const section = title?.closest('.article') || doc.querySelector('.article');
+    const items = section ? [...section.querySelectorAll('.item')].map(row => {
+      const link = row.querySelector('a.nbg') || row.querySelector('.pl2 a');
+      return {
+        title: (link?.getAttribute('title') || link?.querySelector('img')?.alt || '').trim(),
+        url: link?.href || '',
+        score: row.querySelector('.rating_nums')?.textContent.trim() || '',
+      };
+    }).filter(it => it.title && it.url) : [];
+    if (items.length) return items;
+  }catch(e){}
+  const j = await getJSON(API_DOUBAN_HOT);
+  if (j && Array.isArray(j.subjects) && j.subjects.length){
+    return j.subjects.map(it => ({ title: it.title, url: it.url, score: it.rate || '' }));
+  }
+  throw new Error('豆瓣数据异常');
+}
 async function loadSource(src){
+  if (src.api === 'douban') return loadDouban();
   /* 海外平台官方 API（中国大陆可直连） */
   if (src.api === 'hn'){
     const j = await getJSON(API_HN);
@@ -278,22 +337,40 @@ buildTabs();
 const qInput = $('#q'), sstat = $('#sstat');
 function applySearch(){
   const q = qInput.value.trim().toLowerCase();
-  document.body.classList.toggle('searching', !!q);
-  document.querySelector('.search').classList.toggle('has', !!q);
+  const searching = !!q;
+  document.body.classList.toggle('searching', searching);
+  document.querySelector('.search').classList.toggle('has', searching);
   let total = 0;
   cardMap.forEach(el => {
-    if (!q){ el.classList.remove('dim'); el.querySelectorAll('.rk.hide').forEach(li => li.classList.remove('hide')); return; }
-    let n = 0;
-    el.querySelectorAll('.rk').forEach(li => {
+    const ol = el.querySelector('.ranklist');
+    if (!ol){ el.classList.remove('dim'); return; }
+    const lis = [...ol.querySelectorAll('.rk')];
+    const ft = el.querySelector('.card-ft');
+    const more = el.querySelector('.more');
+    const collapsed = ol.classList.contains('collapsed');
+    if (!searching){
+      el.classList.remove('dim');
+      lis.forEach(li => li.classList.remove('hide','over'));
+      if (ft) ft.hidden = lis.length <= SHOW;
+      if (more) more.textContent = collapsed ? `展开全部（共 ${lis.length} 条）` : '收起榜单';
+      return;
+    }
+    let hits = 0;
+    lis.forEach(li => {
       const hit = li.querySelector('.rk-t').textContent.toLowerCase().includes(q);
+      if (hit) hits++;
       li.classList.toggle('hide', !hit);
-      if (hit) n++;
+      li.classList.toggle('over', hit && collapsed && hits > SHOW);
     });
-    total += n;
-    el.classList.toggle('dim', n === 0);
+    total += hits;
+    el.classList.toggle('dim', hits === 0);
+    if (ft){
+      ft.hidden = hits <= SHOW;
+      if (!ft.hidden && more) more.textContent = collapsed ? `展开全部（匹配 ${hits} 条）` : '收起榜单';
+    }
   });
-  sstat.hidden = !q;
-  if (q) sstat.textContent = `匹配 ${total} 条`;
+  sstat.hidden = !searching;
+  if (searching) sstat.textContent = `匹配 ${total} 条`;
 }
 qInput.addEventListener('input', applySearch);
 $('#q-clr').addEventListener('click', () => { qInput.value = ''; applySearch(); qInput.focus(); });
@@ -306,11 +383,14 @@ document.addEventListener('keydown', e => {
 function buildTicker(){
   const tops = SOURCES.filter(s => s._top);
   if (!tops.length) return;
-  const html = tops.map(s =>
-    `<a class="tk" href="${esc(s._top.url || '#')}" target="_blank" rel="noopener noreferrer"><i style="--pc:${s.color}">${esc(s._top.char)}</i>${esc(s._top.title)}</a>`).join('');
+  const html = tops.map(s => {
+    const icon = iconURL(s.id);
+    return `<a class="tk" href="${esc(s._top.url || '#')}" target="_blank" rel="noopener noreferrer"><i class="${icon ? '' : 'noicon'}" style="--pc:${s.color}">${icon ? `<img src="${esc(icon)}" alt="" loading="lazy">` : ''}<b>${esc(s._top.char)}</b></i>${esc(s._top.title)}</a>`;
+  }).join('');
   const track = $('#tk-track');
   track.style.setProperty('--dur', Math.max(60, tops.length * 5) + 's');
   track.innerHTML = `<div class="tk-group">${html}</div><div class="tk-group" aria-hidden="true">${html}</div>`;
+  track.querySelectorAll('.tk i img').forEach(img => img.addEventListener('error', () => img.parentElement.classList.add('noicon')));
 }
 
 /* ================= 加载与自动刷新 ================= */
@@ -360,6 +440,31 @@ window.addEventListener('resize', floatCheck);
 floatCheck();
 fTop.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
 fBot.addEventListener('click', () => window.scrollTo({ top:document.documentElement.scrollHeight, behavior:'smooth' }));
+
+/* ================= 免责声明弹窗 ================= */
+const dInfo = $('#d-info'), dTrigger = $('#d-trigger');
+let bodyPad = '';
+function openInfo(){
+  bodyPad = document.body.style.paddingRight;
+  const sbw = window.innerWidth - document.documentElement.clientWidth;
+  if (sbw > 0) document.body.style.paddingRight = sbw + 'px';
+  document.body.classList.add('dinfo-open');
+  dInfo.showModal();
+}
+function closeInfo(){ dInfo.close(); }
+dTrigger.addEventListener('click', openInfo);
+$('#d-close').addEventListener('click', closeInfo);
+$('#d-ok').addEventListener('click', closeInfo);
+dInfo.addEventListener('close', () => {
+  document.body.classList.remove('dinfo-open');
+  document.body.style.paddingRight = bodyPad;
+  dTrigger.focus();
+});
+dInfo.addEventListener('click', e => {
+  if (!dInfo.open) return;
+  const r = dInfo.getBoundingClientRect();
+  if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closeInfo();
+});
 
 /* 首次加载 */
 refreshAll(true);

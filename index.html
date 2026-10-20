@@ -88,8 +88,8 @@
 
 <footer>
   <div class="wrap">
-    <p class="fbrand">今日<em>热榜</em> · 风从远方来</p>
-    <p>数据来自 <a href="https://api.codelife.cc" target="_blank" rel="noopener noreferrer">Codelife 开放接口</a>（主）与 <a href="https://orz.ai" target="_blank" rel="noopener noreferrer">orz.ai DailyNews</a>（备）· 海外榜单取自 <a href="https://hn.algolia.com" target="_blank" rel="noopener noreferrer">HN Algolia</a> 与 <a href="https://dev.to" target="_blank" rel="noopener noreferrer">dev.to</a> 官方 API</p>
+    <p class="fbrand">今日<em>热榜</em></p>
+    <p>数据来自 <a href="https://api.codelife.cc" target="_blank" rel="noopener noreferrer">Codelife 开放接口</a> · 豆瓣数据经 <a href="https://cors.redoc.ly" target="_blank" rel="noopener noreferrer">Redocly 代理</a> 读取官方榜单 · 海外榜单取自 <a href="https://hn.algolia.com" target="_blank" rel="noopener noreferrer">HN Algolia</a> 与 <a href="https://dev.to" target="_blank" rel="noopener noreferrer">dev.to</a> 官方 API</p>
     <p>每 5 分钟自动刷新 · 点击榜单名称访问官方热榜 · 按 <kbd>/</kbd> 快速搜索</p>
     <p class="fstats" aria-label="站点运行状态">
       <span class="fstat" title="自 2026-07-20 起持续运行">
@@ -106,15 +106,40 @@
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5 13.9 8l5.6 1.9-5.6 1.9L12 17.4l-1.9-5.6L4.5 9.9 10.1 8 12 2.5zM19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6zM5 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2z"/></svg>
       <span>本页面由 AI 生成</span>
     </p>
-    <div class="disclaimer">
-      <strong>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5c0 4.6 3.2 8.4 7.5 10 4.3-1.6 7.5-5.4 7.5-10V6L12 3z"/></svg>
-        免责声明
-      </strong>
-      本页面为个人学习交流项目，所有榜单内容均实时抓取自第三方公开接口，本站不存储、不修改、不转载任何榜单内容，其著作权及相关权益归原平台所有；页面中出现的各平台名称、商标及标识归各自权利人所有。榜单数据可能存在延迟或误差，本站不作任何保证，亦不对因使用本页面信息产生的任何后果承担责任。如相关内容侵犯了您的合法权益，请联系本站删除。
-    </div>
+    <button class="dtrigger" id="d-trigger" type="button" aria-haspopup="dialog" aria-controls="d-info" title="查看数据来源、版权与责任说明">
+      <svg class="dtrigger-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5c0 4.6 3.2 8.4 7.5 10 4.3-1.6 7.5-5.4 7.5-10V6L12 3z"/></svg>
+      <span>免责声明</span>
+      <svg class="dtrigger-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+    </button>
   </div>
 </footer>
+
+<dialog class="dinfo" id="d-info" aria-labelledby="d-info-title">
+  <div class="dinfo-card">
+    <header class="dinfo-hd">
+      <span class="dinfo-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5c0 4.6 3.2 8.4 7.5 10 4.3-1.6 7.5-5.4 7.5-10V6L12 3z"/></svg>
+      </span>
+      <div class="dinfo-tt">
+        <h2 id="d-info-title">免责声明</h2>
+        <p>数据来源、版权与责任说明</p>
+      </div>
+      <button class="dinfo-x" id="d-close" type="button" aria-label="关闭免责声明">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </header>
+    <div class="dinfo-bd" tabindex="0">
+      <p>本站为非商业性的个人学习与技术交流项目。榜单数据来自各平台公开接口或公开页面，仅作实时聚合与展示，不设榜单数据库，也不将原始内容用于商业用途。</p>
+      <p>榜单排序、热度值及内容均由来源平台提供，可能因接口调整、网络波动或平台自身原因出现延迟、缺漏或错误，请以各平台官方发布为准。本站不对数据的完整性、准确性和及时性作出保证，榜单内容也不代表本站观点。</p>
+      <p>页面中出现的平台名称、商标、标识及相关内容的版权均归各自权利人所有，本站与各平台无隶属或合作关系。如果权利人认为本站展示方式侵犯其合法权益，请通过<a href="https://github.com/yiktt/hotboard/issues" target="_blank" rel="noopener noreferrer">项目仓库 Issue</a> 联系维护者，核实后将及时删除相关内容或停止展示。</p>
+      <p>在法律允许的范围内，本站不对因使用或依赖本页面信息而产生的任何直接或间接损失承担责任。页面中的外部链接指向第三方网站，其内容、服务与安全性由该网站负责。</p>
+    </div>
+    <footer class="dinfo-ft">
+      <span class="dinfo-hint">按 <kbd>Esc</kbd> 关闭</span>
+      <button class="dinfo-ok" id="d-ok" type="button">我知道了</button>
+    </footer>
+  </div>
+</dialog>
 
 <div id="toasts" aria-live="polite"></div>
 <noscript><div class="ns">热榜需要 JavaScript 才能加载数据，请在浏览器中启用 JavaScript 后刷新页面。</div></noscript>

@@ -299,10 +299,42 @@ function tickClock(){
 tickClock(); setInterval(tickClock, 1000);
 
 /* ================= 主题切换 ================= */
-$('#btn-theme').addEventListener('click', () => {
-  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = next;
+let themeTarget = document.documentElement.dataset.theme || 'light';
+let themeSwitchId = 0;
+function commitTheme(root, next){
+  root.dataset.theme = next;
   try { localStorage.setItem('hotboard-theme', next); } catch(e){}
+}
+$('#btn-theme').addEventListener('click', () => {
+  const root = document.documentElement;
+  const next = themeTarget === 'dark' ? 'light' : 'dark';
+  themeTarget = next;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const id = ++themeSwitchId;
+  const finish = () => {
+    if (id !== themeSwitchId) return;
+    root.classList.remove('theme-switching', 'theme-vt');
+  };
+
+  root.classList.add('theme-switching');
+  if (reduce || typeof document.startViewTransition !== 'function'){
+    commitTheme(root, next);
+    if (reduce){
+      finish();
+    }else{
+      requestAnimationFrame(() => requestAnimationFrame(finish));
+    }
+    return;
+  }
+
+  root.classList.add('theme-vt');
+  try{
+    const vt = document.startViewTransition(() => commitTheme(root, next));
+    vt.finished.then(finish, finish);
+  }catch(e){
+    commitTheme(root, next);
+    requestAnimationFrame(() => requestAnimationFrame(finish));
+  }
 });
 
 /* ================= 站点统计：运行时长 + 加载速度 ================= */

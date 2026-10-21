@@ -1,7 +1,7 @@
 /* ============ 基础与主题 ============ */
 :root{
   --font-display:'ZCOOL QingKe HuangYou','Noto Sans SC','Microsoft YaHei',sans-serif;
-  --font-body:'Noto Sans SC','PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;
+  --font-body:'Noto Sans SC','PingFang SC','Microsoft YaHei','Segoe UI',system-ui,sans-serif;
   --font-mono:'JetBrains Mono','Cascadia Mono',Consolas,'Courier New',monospace;
   --bg:#f3f2ec; --card:#ffffff; --soft:#f5f4ee;
   --ink:#1b1e23; --muted:#787d86; --line:#e5e3d9;

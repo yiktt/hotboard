@@ -7,17 +7,17 @@
 <meta name="description" content="聚合微博、知乎、百度、B站、X、Hacker News、BBC、纽约时报、澎湃新闻等 46 个平台的实时热榜与新闻头条，每 5 分钟自动刷新。">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f2ec">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#131519">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-LBFYuMnAkBFSJf3Q/GZRao+b3M6IoYynnUeSB7OsTqY='; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net https://api.codelife.cc https://cors.redoc.ly https://hn.algolia.com https://dev.to; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e8442e' d='M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z'/%3E%3C/svg%3E">
+<!-- 修改下方内联主题脚本时，需同步更新 head 中 CSP 的 sha256 哈希 -->
 <script>
 /* 主题预渲染：避免闪烁（必须内联，先于样式执行） */
 (function(){try{var t=localStorage.getItem('hotboard-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='light';}})();
 </script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zcool-qingke-huangyou@5/index.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/700.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/400.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/700.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://cors.redoc.ly" crossorigin>
+<link rel="preconnect" href="https://api.codelife.cc" crossorigin>
 <link rel="stylesheet" href="hot.css">
 </head>
 <body>
@@ -64,7 +64,7 @@
       <button class="clr" id="q-clr" aria-label="清空搜索">×</button>
       <kbd>/</kbd>
     </div>
-    <span class="sstat" id="sstat" hidden></span>
+    <span class="sstat" id="sstat" hidden aria-live="polite"></span>
     <div class="tabs" id="tabs" role="tablist"></div>
     <div class="next">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
@@ -89,8 +89,6 @@
 <footer>
   <div class="wrap">
     <p class="fbrand">今日<em>热榜</em></p>
-    <p>数据来自 <a href="https://api.codelife.cc" target="_blank" rel="noopener noreferrer">Codelife 开放接口</a> · 豆瓣、<a href="https://getdaytrends.com" target="_blank" rel="noopener noreferrer">X 趋势</a>、App Store、媒体 RSS 与新浪/网易/澎湃热榜经 <a href="https://cors.redoc.ly" target="_blank" rel="noopener noreferrer">Redocly 代理</a>读取 · 海外榜单取自 <a href="https://hn.algolia.com" target="_blank" rel="noopener noreferrer">HN Algolia</a> 与 <a href="https://dev.to" target="_blank" rel="noopener noreferrer">dev.to</a> 官方 API</p>
-    <p>每 5 分钟自动刷新 · 点击分类标题收起/展开 · X 趋势与 App Store 可切换国家/地区 · 点击榜单名称访问官方热榜 · 按 <kbd>/</kbd> 快速搜索</p>
     <p class="fstats" aria-label="站点运行状态">
       <span class="fstat" title="自 2026-07-20 起持续运行">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
@@ -106,7 +104,7 @@
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5 13.9 8l5.6 1.9-5.6 1.9L12 17.4l-1.9-5.6L4.5 9.9 10.1 8 12 2.5zM19 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6zM5 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2z"/></svg>
       <span>本页面由 AI 生成</span>
     </p>
-    <button class="dtrigger" id="d-trigger" type="button" aria-haspopup="dialog" aria-controls="d-info" title="查看数据来源、版权与责任说明">
+    <button class="dtrigger" id="d-trigger" type="button" aria-haspopup="dialog" aria-controls="d-info" title="查看数据来源、使用提示与责任说明">
       <svg class="dtrigger-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5c0 4.6 3.2 8.4 7.5 10 4.3-1.6 7.5-5.4 7.5-10V6L12 3z"/></svg>
       <span>免责声明</span>
       <svg class="dtrigger-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
@@ -122,7 +120,7 @@
       </span>
       <div class="dinfo-tt">
         <h2 id="d-info-title">免责声明</h2>
-        <p>数据来源、版权与责任说明</p>
+        <p>数据来源、使用提示与责任说明</p>
       </div>
       <button class="dinfo-x" id="d-close" type="button" aria-label="关闭免责声明">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
@@ -130,6 +128,8 @@
     </header>
     <div class="dinfo-bd" tabindex="0">
       <p>本站为非商业性的个人学习与技术交流项目。榜单数据来自各平台公开接口或公开页面，仅作实时聚合与展示，不设榜单数据库，也不将原始内容用于商业用途。</p>
+      <p><strong>数据来源：</strong>数据来自 <a href="https://api.codelife.cc" target="_blank" rel="noopener noreferrer">Codelife 开放接口</a> · 豆瓣、<a href="https://getdaytrends.com" target="_blank" rel="noopener noreferrer">X 趋势</a>、App Store、媒体 RSS 与新浪/网易/澎湃热榜经 <a href="https://cors.redoc.ly" target="_blank" rel="noopener noreferrer">Redocly 代理</a>读取 · 海外榜单取自 <a href="https://hn.algolia.com" target="_blank" rel="noopener noreferrer">HN Algolia</a> 与 <a href="https://dev.to" target="_blank" rel="noopener noreferrer">dev.to</a> 官方 API。</p>
+      <p><strong>使用提示：</strong>每 5 分钟自动刷新 · 点击分类标题收起/展开 · X 趋势与 App Store 可切换国家/地区 · 点击榜单名称访问官方热榜 · 按 <kbd>/</kbd> 快速搜索。</p>
       <p>榜单排序、热度值及内容均由来源平台提供，可能因接口调整、网络波动或平台自身原因出现延迟、缺漏或错误，请以各平台官方发布为准。本站不对数据的完整性、准确性和及时性作出保证，榜单内容也不代表本站观点。</p>
       <p>页面中出现的平台名称、商标、标识及相关内容的版权均归各自权利人所有，本站与各平台无隶属或合作关系。如果权利人认为本站展示方式侵犯其合法权益，请通过<a href="https://github.com/yiktt/hotboard/issues" target="_blank" rel="noopener noreferrer">项目仓库 Issue</a> 联系维护者，核实后将及时删除相关内容或停止展示。</p>
       <p>在法律允许的范围内，本站不对因使用或依赖本页面信息而产生的任何直接或间接损失承担责任。页面中的外部链接指向第三方网站，其内容、服务与安全性由该网站负责。</p>

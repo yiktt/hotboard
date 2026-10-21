@@ -199,12 +199,30 @@ const API_NETEASE    = 'https://cors.redoc.ly/https://m.163.com/fe/api/hot/news/
 const API_THEPAPER   = 'https://cors.redoc.ly/https://cache.thepaper.cn/contentapi/wwwIndex/rightSidebar';
 const REFRESH_MS = 5 * 60 * 1000;
 const SHOW = 10;
+const LOAD_CONCURRENCY = 6;
+const CACHE_PREFIX = 'hotboard-cache-v1:';
 
 /* ================= 工具 ================= */
 const $  = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeURL = u => /^https?:\/\//i.test(String(u ?? '')) ? u : '#';
 const pad = n => String(n).padStart(2,'0');
+const fmtTime = ts => new Date(ts).toTimeString().slice(0,8);
+const FONT_CSS = [
+  'https://cdn.jsdelivr.net/npm/@fontsource/zcool-qingke-huangyou@5/index.css',
+  'https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/400.css',
+  'https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/700.css',
+];
+function loadFonts(){
+  FONT_CSS.forEach(href => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  });
+}
+if (document.readyState === 'complete') setTimeout(loadFonts, 0);
+else window.addEventListener('load', loadFonts, { once:true });
 const FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>';
 const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4-5.8-3-5.8 3 1.1-6.4L2.6 9.4l6.5-.9z"/></svg>';
 
@@ -216,6 +234,33 @@ function fmtHot(h){
   if (!isNaN(n) && n >= 1e8) return (n/1e8).toFixed(1) + '亿';
   if (!isNaN(n) && n >= 1e4) return (n/1e4).toFixed(1) + '万';
   return s;
+}
+function cacheKey(src){
+  return CACHE_PREFIX + src.id + (src.region ? ':' + src.region : '');
+}
+function readCache(src){
+  try{
+    const raw = sessionStorage.getItem(cacheKey(src));
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !Number.isFinite(data.t) || !Array.isArray(data.items) || !data.items.length) return null;
+    return data;
+  }catch(e){
+    return null;
+  }
+}
+function writeCache(src, items){
+  try{
+    sessionStorage.setItem(cacheKey(src), JSON.stringify({ t: Date.now(), items }));
+  }catch(e){
+    try{
+      for (let i = sessionStorage.length - 1; i >= 0; i--){
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith(CACHE_PREFIX)) sessionStorage.removeItem(key);
+      }
+      sessionStorage.setItem(cacheKey(src), JSON.stringify({ t: Date.now(), items }));
+    }catch(_){}
+  }
 }
 async function getJSON(url, timeout = 12000){
   const ctrl = new AbortController();
@@ -298,19 +343,80 @@ function skeleton(){
   }
   return rows;
 }
+function itemHTML(it, i){
+  const r = i + 1;
+  const hot = fmtHot(it.hot);
+  const extra = it.score
+    ? `<span class="rk-h rk-score" title="豆瓣评分">${STAR}${esc(it.score)}</span>`
+    : hot ? `<span class="rk-h">${FLAME}${esc(hot)}</span>` : '';
+  return `<li class="rk">
+    <span class="rank${r <= 3 ? ' r'+r : ''}">${r}</span>
+    <a class="rk-t" href="${esc(safeURL(it.url))}" target="_blank" rel="noopener noreferrer" title="${esc(it.title)}">${esc(it.title)}</a>
+    ${extra}
+  </li>`;
+}
 function listHTML(items){
-  return '<ol class="ranklist' + (items.length > SHOW ? ' collapsed' : '') + '">' + items.map((it, i) => {
-    const r = i + 1;
-    const hot = fmtHot(it.hot);
-    const extra = it.score
-      ? `<span class="rk-h rk-score" title="豆瓣评分">${STAR}${esc(it.score)}</span>`
-      : hot ? `<span class="rk-h">${FLAME}${esc(hot)}</span>` : '';
-    return `<li class="rk">
-      <span class="rank${r <= 3 ? ' r'+r : ''}">${r}</span>
-      <a class="rk-t" href="${esc(safeURL(it.url))}" target="_blank" rel="noopener noreferrer" title="${esc(it.title)}">${esc(it.title)}</a>
-      ${extra}
-    </li>`;
-  }).join('') + '</ol>';
+  return '<ol class="ranklist">' + items.map(itemHTML).join('') + '</ol>';
+}
+function indexList(ol, items){
+  const lis = ol.children;
+  for (let i = 0; i < lis.length; i++){
+    lis[i]._search = String(items[i]?.title || '').toLowerCase();
+  }
+}
+function renderItems(src, el, items){
+  src._items = items;
+  src._hydrated = items.length <= SHOW;
+  src._expanded = false;
+  const body = el.querySelector('.card-bd');
+  body.innerHTML = listHTML(items.slice(0, SHOW));
+  const ol = body.querySelector('.ranklist');
+  if (items.length > SHOW) ol.classList.add('collapsed');
+  indexList(ol, items);
+}
+function ensureFullList(src, el){
+  if (!src._items || src._hydrated) return;
+  const ol = el.querySelector('.ranklist');
+  if (!ol) return;
+  const extra = src._items.slice(SHOW);
+  if (extra.length) ol.insertAdjacentHTML('beforeend', extra.map((it, i) => itemHTML(it, i + SHOW)).join(''));
+  src._hydrated = true;
+  indexList(ol, src._items);
+}
+function trimList(src, el){
+  if (!src._items || src._items.length <= SHOW) return;
+  const ol = el.querySelector('.ranklist');
+  if (!ol) return;
+  while (ol.children.length > SHOW) ol.lastElementChild.remove();
+  src._hydrated = false;
+  ol.classList.add('collapsed');
+  const ft = el.querySelector('.card-ft');
+  const more = el.querySelector('.more');
+  if (ft && !el.classList.contains('has-region')) ft.hidden = false;
+  if (more) more.textContent = `展开全部（共 ${src._count} 条）`;
+}
+function trimCollapsedLists(){
+  cardMap.forEach(el => {
+    const src = el._src;
+    if (src?._hydrated && !src._expanded) trimList(src, el);
+  });
+}
+function renderCardData(src, el, items, ts){
+  src._top = { title: items[0].title, url: items[0].url, char: src.char, color: src.color };
+  src._count = items.length;
+  src._dataTs = ts;
+  renderItems(src, el, items);
+  const ft = el.querySelector('.card-ft');
+  const more = el.querySelector('.more');
+  if (items.length > SHOW){
+    ft.hidden = false;
+    if (more) more.textContent = `展开全部（共 ${items.length} 条）`;
+  }else{
+    ft.hidden = !src.regions;
+  }
+  const ptime = el.querySelector('.ptime');
+  ptime.textContent = '更新于 ' + fmtTime(ts);
+  ptime.title = '';
 }
 function regionName(src){
   return (src.regions || []).find(r => r.id === src.region)?.name || '';
@@ -331,6 +437,8 @@ function buildCard(src){
   const el = document.createElement('article');
   el.className = 'card reveal';
   el.dataset.cat = src.cat;
+  el._src = src;
+  if (!src._state) src._state = 'idle';
   const small = src.char.length > 1 ? ' small' : '';
   const icon = iconURL(src.id);
   const regionPicker = src.regions ? `
@@ -367,22 +475,29 @@ function buildCard(src){
   const badge = el.querySelector('.pbadge');
   if (!icon) badge.classList.add('noicon');
   else badge.querySelector('img').addEventListener('error', () => badge.classList.add('noicon'));
-  el.querySelector('.card-refresh').addEventListener('click', () => loadCard(src, el));
+  el.querySelector('.card-refresh').addEventListener('click', () => enqueueLoad(src, el, { force:true }));
   const more = el.querySelector('.more');
   if (more) more.addEventListener('click', function(){
     const ol = el.querySelector('.ranklist');
+    if (ol.classList.contains('collapsed')) ensureFullList(src, el);
     const collapsed = ol.classList.toggle('collapsed');
+    src._expanded = !collapsed;
     if (qInput.value.trim()) applySearch();
-    else this.textContent = collapsed ? `展开全部（共 ${src._count} 条）` : '收起榜单';
+    else if (collapsed) trimList(src, el);
+    else this.textContent = '收起榜单';
   });
   const regionSelect = el.querySelector('.region-select');
   if (regionSelect){
     el.classList.add('has-region');
     regionSelect.addEventListener('change', () => {
+      if (!src.regions.some(r => r.id === regionSelect.value)) return;
       src.region = regionSelect.value;
       el.querySelector('.pmeta h3 a').href = sourceHome(src);
       el.querySelector('.psub').textContent = sourceSub(src);
-      loadCard(src, el);
+      src._state = 'loading';
+      loadCard(src, el, { clear:true }).finally(() => {
+        src._state = el.querySelector('.card-err') ? 'error' : 'loaded';
+      });
     });
   }
   cardMap.set(src.id, el);
@@ -403,7 +518,9 @@ async function loadDouban(){
       };
     }).filter(it => it.title && it.url) : [];
     if (items.length) return items;
-  }catch(e){}
+  }catch(e){
+    console.warn('[hotboard] 豆瓣页面解析失败，尝试热门接口', e?.name === 'AbortError' ? '请求超时' : e);
+  }
   const j = await getJSON(API_DOUBAN_HOT);
   if (j && Array.isArray(j.subjects) && j.subjects.length){
     return j.subjects.map(it => ({ title: it.title, url: it.url, score: it.rate || '' }));
@@ -411,7 +528,8 @@ async function loadDouban(){
   throw new Error('豆瓣数据异常');
 }
 async function loadX(src){
-  const slug = src.region && src.region !== 'worldwide' ? `${src.region}/` : '';
+  const region = src.region || 'united-states';
+  const slug = region !== 'worldwide' ? `${region}/` : '';
   const html = await getText(API_X + slug);
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const rows = [...doc.querySelectorAll('#trends tr, #moreTrends tr')].filter(row => row.querySelector('th.pos'));
@@ -426,7 +544,7 @@ async function loadX(src){
   throw new Error('X 趋势数据异常');
 }
 async function loadAppStore(src){
-  const j = await getJSON(API_ITUNES(src.region || 'cn'), 20000);
+  const j = await getJSON(API_ITUNES(src.region || 'us'), 20000);
   const entries = j?.feed?.entry;
   if (Array.isArray(entries) && entries.length){
     return entries.map(e => {
@@ -484,29 +602,47 @@ async function loadRSS(src){
   if (items.length) return items;
   throw new Error('新闻 RSS 数据异常');
 }
+async function loadHN(){
+  const j = await getJSON(API_HN);
+  if (j && Array.isArray(j.hits) && j.hits.length){
+    return j.hits.map(h => ({ title: h.title, hot: h.points, url: h.url || `https://news.ycombinator.com/item?id=${h.objectID}` }));
+  }
+  throw new Error('Hacker News 数据异常');
+}
+async function loadDevto(){
+  const j = await getJSON(API_DEVTO);
+  if (Array.isArray(j) && j.length){
+    return j.map(a => ({ title: a.title, hot: a.positive_reactions_count, url: a.url || 'https://dev.to' + a.path }));
+  }
+  throw new Error('dev.to 数据异常');
+}
+const LOADERS = {
+  'sina-hot': loadSinaHot,
+  netease: loadNeteaseHot,
+  thepaper: loadThePaperHot,
+  rss: loadRSS,
+  douban: loadDouban,
+  x: loadX,
+  appstore: loadAppStore,
+  hn: loadHN,
+  devto: loadDevto,
+};
+function validateSources(){
+  const seen = new Set();
+  SOURCES.forEach(src => {
+    if (seen.has(src.id)) console.warn('[hotboard] 数据源 id 重复', src.id);
+    seen.add(src.id);
+    if (!src.cid && !src.api) console.warn('[hotboard] 数据源缺少 cid/api', src.id);
+    if (src.api && !LOADERS[src.api]) console.warn('[hotboard] 未知 api', src.id, src.api);
+    if (src.api === 'rss' && !src.feed) console.warn('[hotboard] RSS 数据源缺少 feed', src.id);
+    if (src.regions && !src.regions.some(r => r.id === src.region)) console.warn('[hotboard] 默认地区无效', src.id, src.region);
+    if (!ICONS[src.id]) console.warn('[hotboard] 数据源缺少图标', src.id);
+  });
+}
+validateSources();
 async function loadSource(src){
-  if (src.api === 'sina-hot') return loadSinaHot();
-  if (src.api === 'netease') return loadNeteaseHot();
-  if (src.api === 'thepaper') return loadThePaperHot();
-  if (src.api === 'rss') return loadRSS(src);
-  if (src.api === 'douban') return loadDouban();
-  if (src.api === 'x') return loadX(src);
-  if (src.api === 'appstore') return loadAppStore(src);
-  /* 海外平台官方 API（中国大陆可直连） */
-  if (src.api === 'hn'){
-    const j = await getJSON(API_HN);
-    if (j && Array.isArray(j.hits) && j.hits.length){
-      return j.hits.map(h => ({ title: h.title, hot: h.points, url: h.url || `https://news.ycombinator.com/item?id=${h.objectID}` }));
-    }
-    throw new Error('Hacker News 数据异常');
-  }
-  if (src.api === 'devto'){
-    const j = await getJSON(API_DEVTO);
-    if (Array.isArray(j) && j.length){
-      return j.map(a => ({ title: a.title, hot: a.positive_reactions_count, url: a.url || 'https://dev.to' + a.path }));
-    }
-    throw new Error('dev.to 数据异常');
-  }
+  const custom = LOADERS[src.api];
+  if (custom) return custom(src);
   /* codelife 主源 */
   try{
     const j = await getJSON(API_CODELIFE(src.cid));
@@ -516,6 +652,7 @@ async function loadSource(src){
     throw new Error('主源数据异常');
   }catch(e){
     if (!src.orz) throw e;
+    console.warn('[hotboard] 主源失败，尝试备源', src.id, e?.name === 'AbortError' ? '请求超时' : e);
   }
   /* orz.ai 备源 */
   const j = await getJSON(API_ORZ(src.orz));
@@ -524,36 +661,97 @@ async function loadSource(src){
   }
   throw new Error('主备源均不可用');
 }
-async function loadCard(src, el){
+async function loadCard(src, el, { force = false, clear = false } = {}){
   const body = el.querySelector('.card-bd');
   const ft = el.querySelector('.card-ft');
   const btn = el.querySelector('.card-refresh');
   const seq = (src._seq = (src._seq || 0) + 1);
+  if (clear){
+    body.innerHTML = skeleton();
+    el.querySelector('.ptime').textContent = '加载中…';
+    src._items = null;
+    src._hydrated = false;
+    src._count = 0;
+    src._dataTs = 0;
+  }
+  const cached = readCache(src);
+  if (cached){
+    renderCardData(src, el, cached.items, cached.t);
+    scheduleTicker();
+    if (!force && Date.now() - cached.t < REFRESH_MS){
+      btn.classList.remove('spin');
+      if (qInput.value.trim()) applySearch();
+      return;
+    }
+  }
+  const previous = src._items ? { items: src._items, t: src._dataTs || Date.now() } : null;
   btn.classList.add('spin');
-  if (!src.regions) ft.hidden = true;
+  if (!cached && !src._items) ft.hidden = !src.regions;
   try{
     const items = await loadSource(src);
     if (seq !== src._seq) return;
-    src._top = { title: items[0].title, url: items[0].url, char: src.char, color: src.color };
-    src._count = items.length;
-    body.innerHTML = listHTML(items);
-    el.querySelector('.ptime').textContent = '更新于 ' + new Date().toTimeString().slice(0,8);
-    if (src.regions){
-      ft.hidden = false;
-    }else if (items.length > SHOW){
-      ft.hidden = false;
-      el.querySelector('.more').textContent = `展开全部（共 ${items.length} 条）`;
-      el.querySelector('.ranklist').classList.add('collapsed');
-    }
-    applySearch(); /* 刷新后保持搜索过滤状态 */
+    if (!items.length) throw new Error('空数据');
+    writeCache(src, items);
+    renderCardData(src, el, items, Date.now());
+    scheduleTicker();
+    if (qInput.value.trim()) applySearch();
   }catch(e){
     if (seq !== src._seq) return;
-    body.innerHTML = `<div class="card-err"><p>榜单加载失败，可能是网络波动</p><button class="retry">重新加载</button></div>`;
-    el.querySelector('.ptime').textContent = '加载失败';
-    body.querySelector('.retry').addEventListener('click', () => loadCard(src, el));
+    const reason = e?.name === 'AbortError' ? '请求超时' : (e?.message || e);
+    console.warn('[hotboard] 加载失败', src.id, reason);
+    const fallback = cached || previous;
+    if (fallback){
+      renderCardData(src, el, fallback.items, fallback.t);
+      const ptime = el.querySelector('.ptime');
+      ptime.textContent = (cached ? '缓存 · ' : '上次数据 · ') + fmtTime(fallback.t);
+      ptime.title = '网络刷新失败，显示' + (cached ? '缓存数据' : '上次成功数据');
+      scheduleTicker();
+      if (qInput.value.trim()) applySearch();
+    }else{
+      body.innerHTML = `<div class="card-err"><p>榜单加载失败，可能是网络波动</p><button class="retry">重新加载</button></div>`;
+      el.querySelector('.ptime').textContent = '加载失败';
+      body.querySelector('.retry').addEventListener('click', () => enqueueLoad(src, el, { force:true }));
+    }
   }finally{
     if (seq === src._seq) btn.classList.remove('spin');
   }
+}
+
+/* ================= 按需加载队列 ================= */
+const loadQueue = [];
+let activeLoads = 0;
+function enqueueLoad(src, el, opts = {}){
+  if (!src || !el) return Promise.resolve();
+  if (src._state === 'queued' || src._state === 'loading') return Promise.resolve();
+  if (src._state === 'loaded' && !opts.force && !opts.reload) return Promise.resolve();
+  src._state = 'queued';
+  return new Promise((resolve, reject) => {
+    loadQueue.push({ src, el, opts, resolve, reject });
+    drainLoadQueue();
+  });
+}
+async function drainLoadQueue(){
+  while (activeLoads < LOAD_CONCURRENCY && loadQueue.length){
+    const job = loadQueue.shift();
+    activeLoads++;
+    job.src._state = 'loading';
+    try{
+      await loadCard(job.src, job.el, job.opts);
+      job.resolve();
+    }catch(e){
+      job.reject(e);
+    }finally{
+      activeLoads--;
+      job.src._state = job.el.querySelector('.card-err') ? 'error' : 'loaded';
+      drainLoadQueue();
+    }
+  }
+}
+function loadGridCards(grid){
+  grid?.querySelectorAll('.card').forEach(el => enqueueLoad(el._src, el));
+}
+function loadAllCards(){
+  SOURCES.forEach(src => enqueueLoad(src, cardMap.get(src.id)));
 }
 
 /* 组装板块：分类标题 + 卡片 */
@@ -595,6 +793,7 @@ CATS.forEach(cat => {
   label.querySelector('.cat-toggle').addEventListener('click', () => {
     const folded = !grid.classList.contains('folded');
     setGridFolded(grid, folded);
+    if (!folded) loadGridCards(grid);
     if (qInput.value.trim() && searchFoldedCats){
       if (folded) searchFoldedCats.add(grid);
       else searchFoldedCats.delete(grid);
@@ -610,6 +809,35 @@ const io = new IntersectionObserver(entries => {
 }, { threshold: .06 });
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
+/* 按视口加载：首屏优先，滚动接近时再请求 */
+const cardLoader = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (!en.isIntersecting) return;
+    cardLoader.unobserve(en.target);
+    enqueueLoad(en.target._src, en.target);
+  });
+}, { rootMargin: '600px 0px', threshold: .01 });
+cardMap.forEach(el => cardLoader.observe(el));
+
+/* 后台标签页/旧浏览器下 IntersectionObserver 可能延迟回调，首屏兜底加载 */
+function loadNearViewport(){
+  const margin = 600;
+  const vh = window.innerHeight || 900;
+  cardMap.forEach(el => {
+    const r = el.getBoundingClientRect();
+    if (r.top < vh + margin && r.bottom > -margin) enqueueLoad(el._src, el);
+  });
+}
+window.addEventListener('load', loadNearViewport, { once:true });
+let lazyScrollAt = 0;
+window.addEventListener('scroll', () => {
+  if (!SOURCES.some(src => src._state === 'idle')) return;
+  const now = performance.now();
+  if (now - lazyScrollAt < 150) return;
+  lazyScrollAt = now;
+  loadNearViewport();
+}, { passive:true });
+
 /* ================= 分类页签 ================= */
 const tabsBox = $('#tabs');
 function buildTabs(){
@@ -623,21 +851,33 @@ function buildTabs(){
     board.querySelectorAll('.card, .cat-label').forEach(el => {
       el.classList.toggle('off', cat !== 'all' && el.dataset.cat !== cat);
     });
+    if (cat !== 'all') loadGridCards($('#grid-' + cat));
   }));
 }
 buildTabs();
 
 /* ================= 搜索过滤 ================= */
 const qInput = $('#q'), sstat = $('#sstat');
+function hydrateAllLists(){
+  cardMap.forEach(el => {
+    const src = el._src;
+    if (src?._items) ensureFullList(src, el);
+  });
+}
 function applySearch(){
   const q = qInput.value.trim().toLowerCase();
   const searching = !!q;
+  if (searching){
+    loadAllCards();
+    hydrateAllLists();
+  }
   if (searching && !searchFoldedCats){
     searchFoldedCats = new Set(catGrids.filter(g => g.classList.contains('folded')));
     searchFoldedCats.forEach(g => setGridFolded(g, false));
   }else if (!searching && searchFoldedCats){
     searchFoldedCats.forEach(g => setGridFolded(g, true));
     searchFoldedCats = null;
+    trimCollapsedLists();
   }
   document.body.classList.toggle('searching', searching);
   document.querySelector('.search').classList.toggle('has', searching);
@@ -650,16 +890,18 @@ function applySearch(){
     const more = el.querySelector('.more');
     const hasRegion = el.classList.contains('has-region');
     const collapsed = ol.classList.contains('collapsed');
+    const cardTotal = el._src?._count ?? lis.length;
     if (!searching){
       el.classList.remove('dim');
       lis.forEach(li => li.classList.remove('hide','over'));
-      if (ft && !hasRegion) ft.hidden = lis.length <= SHOW;
-      if (more) more.textContent = collapsed ? `展开全部（共 ${lis.length} 条）` : '收起榜单';
+      if (ft && !hasRegion) ft.hidden = cardTotal <= SHOW;
+      if (more) more.textContent = collapsed ? `展开全部（共 ${cardTotal} 条）` : '收起榜单';
       return;
     }
     let hits = 0;
     lis.forEach(li => {
-      const hit = li.querySelector('.rk-t').textContent.toLowerCase().includes(q);
+      const text = li._search ?? li.querySelector('.rk-t').textContent.toLowerCase();
+      const hit = text.includes(q);
       if (hit) hits++;
       li.classList.toggle('hide', !hit);
       li.classList.toggle('over', hit && collapsed && hits > SHOW);
@@ -674,14 +916,36 @@ function applySearch(){
   sstat.hidden = !searching;
   if (searching) sstat.textContent = `匹配 ${total} 条`;
 }
-qInput.addEventListener('input', applySearch);
-$('#q-clr').addEventListener('click', () => { qInput.value = ''; applySearch(); qInput.focus(); });
+let searchTimer = null;
+qInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applySearch, 120);
+});
+$('#q-clr').addEventListener('click', () => {
+  clearTimeout(searchTimer);
+  qInput.value = '';
+  applySearch();
+  qInput.focus();
+});
 document.addEventListener('keydown', e => {
   if (e.key === '/' && document.activeElement !== qInput){ e.preventDefault(); qInput.focus(); }
-  if (e.key === 'Escape' && document.activeElement === qInput){ qInput.value=''; applySearch(); qInput.blur(); }
+  if (e.key === 'Escape' && document.activeElement === qInput){
+    clearTimeout(searchTimer);
+    qInput.value='';
+    applySearch();
+    qInput.blur();
+  }
 });
 
 /* ================= 滚动播报 ================= */
+let tickerTimer = null;
+function scheduleTicker(){
+  if (tickerTimer) return;
+  tickerTimer = setTimeout(() => {
+    tickerTimer = null;
+    buildTicker();
+  }, 200);
+}
 function buildTicker(){
   const tops = SOURCES.filter(s => s._top);
   if (!tops.length) return;
@@ -697,28 +961,42 @@ function buildTicker(){
 
 /* ================= 加载与自动刷新 ================= */
 let nextAt = Date.now() + REFRESH_MS;
-async function refreshAll(silent){
+let refreshing = false;
+async function refreshAll(silent, force = true, onlyLoaded = false){
+  if (refreshing) return;
+  refreshing = true;
   const btn = $('#btn-refresh');
   btn.classList.add('spin');
-  await Promise.allSettled(SOURCES.map((s, i) =>
-    new Promise(r => setTimeout(() => loadCard(s, cardMap.get(s.id)).finally(r), i * 55))
-  ));
-  buildTicker();
-  btn.classList.remove('spin');
-  nextAt = Date.now() + REFRESH_MS;
-  if (!silent) toast('已更新 · ' + new Date().toTimeString().slice(0,5));
+  try{
+    const targets = onlyLoaded
+      ? SOURCES.filter(s => s._state === 'loaded' || s._state === 'error')
+      : SOURCES;
+    const ordered = targets.slice().sort((a, b) => {
+      const ea = cardMap.get(a.id), eb = cardMap.get(b.id);
+      const ta = ea && ea.offsetParent !== null ? ea.getBoundingClientRect().top : Infinity;
+      const tb = eb && eb.offsetParent !== null ? eb.getBoundingClientRect().top : Infinity;
+      return ta - tb;
+    });
+    await Promise.allSettled(ordered.map(src => enqueueLoad(src, cardMap.get(src.id), { force })));
+    buildTicker();
+    nextAt = Date.now() + REFRESH_MS;
+    if (!silent) toast('已更新 · ' + new Date().toTimeString().slice(0,5));
+  }finally{
+    btn.classList.remove('spin');
+    refreshing = false;
+  }
 }
 $('#btn-refresh').addEventListener('click', () => refreshAll());
 
 setInterval(() => {
   const left = Math.max(0, nextAt - Date.now());
   $('#cd').textContent = pad(Math.floor(left/60000)) + ':' + pad(Math.floor(left%60000/1000));
-  if (left <= 0 && !document.hidden) refreshAll(true);
+  if (left <= 0 && !document.hidden) refreshAll(true, true, true);
 }, 1000);
 
-/* 切回标签页时若已过期则刷新 */
+/* 切回标签页时若已过期则刷新已加载卡片 */
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && Date.now() > nextAt) refreshAll(true);
+  if (!document.hidden && Date.now() > nextAt) refreshAll(true, true, true);
 });
 window.addEventListener('offline', () => toast('网络已断开，数据可能不是最新'));
 window.addEventListener('online',  () => toast('网络已恢复'));
@@ -768,5 +1046,5 @@ dInfo.addEventListener('click', e => {
   if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closeInfo();
 });
 
-/* 首次加载 */
-refreshAll(true);
+/* 首屏卡片由 IntersectionObserver 按视口按需加载 */
+loadNearViewport();

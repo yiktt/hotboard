@@ -5,9 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>今日热榜 · 全网热点实时聚合</title>
 <meta name="description" content="聚合微博、知乎、百度、B站、X、Hacker News、BBC、纽约时报、澎湃新闻等 46 个平台的实时热榜与新闻头条，每 5 分钟自动刷新。">
+<link rel="canonical" href="https://yiktt.github.io/hotboard/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="今日热榜">
+<meta property="og:title" content="今日热榜 · 全网热点实时聚合">
+<meta property="og:description" content="聚合微博、知乎、百度、B站、X、Hacker News、BBC、纽约时报、澎湃新闻等 46 个平台的实时热榜与新闻头条，每 5 分钟自动刷新。">
+<meta property="og:url" content="https://yiktt.github.io/hotboard/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="今日热榜 · 全网热点实时聚合">
+<meta name="twitter:description" content="聚合微博、知乎、百度、B站、X、Hacker News、BBC、纽约时报、澎湃新闻等 46 个平台的实时热榜与新闻头条，每 5 分钟自动刷新。">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f2ec">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#131519">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-LBFYuMnAkBFSJf3Q/GZRao+b3M6IoYynnUeSB7OsTqY='; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://cdn.jsdelivr.net https://api.codelife.cc https://cors.redoc.ly https://hn.algolia.com https://dev.to; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-LBFYuMnAkBFSJf3Q/GZRao+b3M6IoYynnUeSB7OsTqY='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://api.codelife.cc https://cors.redoc.ly https://hn.algolia.com https://dev.to; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e8442e' d='M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z'/%3E%3C/svg%3E">
 <!-- 修改下方内联主题脚本时，需同步更新 head 中 CSP 的 sha256 哈希 -->
@@ -15,10 +24,13 @@
 /* 主题预渲染：避免闪烁（必须内联，先于样式执行） */
 (function(){try{var t=localStorage.getItem('hotboard-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='light';}})();
 </script>
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="preconnect" href="https://cors.redoc.ly" crossorigin>
 <link rel="preconnect" href="https://api.codelife.cc" crossorigin>
 <link rel="stylesheet" href="hot.css">
+<!-- 字体为自托管子集；新增展示文案后运行 node scripts/build-fonts.mjs 重新生成 -->
+<link rel="preload" as="font" type="font/woff2" href="fonts/zcool-ui.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/jetbrains-mono-400.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/jetbrains-mono-700.woff2" crossorigin>
 </head>
 <body>
 <div class="heatline" aria-hidden="true"></div>
@@ -65,7 +77,7 @@
       <kbd>/</kbd>
     </div>
     <span class="sstat" id="sstat" hidden aria-live="polite"></span>
-    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="tabs" id="tabs" role="group" aria-label="分类筛选"></div>
     <div class="next">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
       <b id="cd">05:00</b><span>后自动刷新</span>
@@ -73,8 +85,14 @@
   </div>
 </nav>
 
+<div class="wrap src-alert" id="src-alert" role="status" hidden>
+  <span id="src-alert-text">部分榜单数据源暂时不可用</span>
+  <button type="button" id="src-retry">重试失败榜单</button>
+  <button type="button" class="src-alert-x" id="src-alert-close" aria-label="关闭数据源提示">×</button>
+</div>
+
 <main class="wrap">
-  <div id="board"></div>
+  <div id="board"><p class="search-empty" id="search-empty" role="status" hidden>没有找到匹配的内容，试试更短的关键词。</p></div>
 </main>
 
 <div class="floats">

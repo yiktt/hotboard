@@ -109,22 +109,22 @@ const APP_REGIONS = [
   { id:'ae', name:'阿联酋' },
   { id:'sa', name:'沙特阿拉伯' },
 ];
-/* cid = codelife 榜单 ID；orz = orz.ai 备用平台名；api = 自定义官方接口；feed = RSS 地址；nohot = 热度值无意义时不显示；home = 官方热榜页 */
+/* cid = codelife 榜单 ID；api = 自定义官方接口；feed = RSS 地址；nohot = 热度值无意义时不显示；home = 官方热榜页 */
 const SOURCES = [
-  { id:'weibo',      cat:'hot',    name:'微博热搜',      char:'微', color:'#e6162d', sub:'随时随地发现新鲜事',   cid:'KqndgxeLl9', orz:'weibo',        home:'https://s.weibo.com/top/summary' },
-  { id:'zhihu',      cat:'hot',    name:'知乎热榜',      char:'知', color:'#0084ff', sub:'有问题 就会有答案',    cid:'mproPpoq6O', orz:'zhihu',        home:'https://www.zhihu.com/hot' },
-  { id:'baidu',      cat:'hot',    name:'百度热点',      char:'百', color:'#2932e1', sub:'实时热点榜',           cid:'Jb0vmloB1G', orz:'baidu',        home:'https://top.baidu.com/board?tab=realtime' },
-  { id:'toutiao',    cat:'hot',    name:'头条热榜',      char:'头', color:'#f85959', sub:'信息创造价值',         cid:'toutiao',    orz:'jinritoutiao', home:'https://www.toutiao.com/' },
+  { id:'weibo',      cat:'hot',    name:'微博热搜',      char:'微', color:'#e6162d', sub:'随时随地发现新鲜事',   cid:'KqndgxeLl9',        home:'https://s.weibo.com/top/summary' },
+  { id:'zhihu',      cat:'hot',    name:'知乎热榜',      char:'知', color:'#0084ff', sub:'有问题 就会有答案',    cid:'mproPpoq6O',        home:'https://www.zhihu.com/hot' },
+  { id:'baidu',      cat:'hot',    name:'百度热点',      char:'百', color:'#2932e1', sub:'实时热点榜',           cid:'Jb0vmloB1G',        home:'https://top.baidu.com/board?tab=realtime' },
+  { id:'toutiao',    cat:'hot',    name:'头条热榜',      char:'头', color:'#f85959', sub:'信息创造价值',         cid:'toutiao', home:'https://www.toutiao.com/' },
   { id:'wechat',     cat:'hot',    name:'微信热文',      char:'信', color:'#07c160', sub:'24h 热门公众号文章',   cid:'WnBe01o371',                     home:'https://weixin.qq.com/' },
   { id:'smzdm',      cat:'hot',    name:'什么值得买',    char:'值', color:'#e02727', sub:'好文 · 好价榜',        cid:'K7GdagpoQy',                     home:'https://www.smzdm.com/' },
-  { id:'tieba',      cat:'hot',    name:'百度贴吧',      char:'贴', color:'#3085d6', sub:'热议话题榜',           cid:'Om4ejxvxEN', orz:'tieba',        home:'https://tieba.baidu.com/' },
+  { id:'tieba',      cat:'hot',    name:'百度贴吧',      char:'贴', color:'#3085d6', sub:'热议话题榜',           cid:'Om4ejxvxEN',        home:'https://tieba.baidu.com/' },
   { id:'sinahot',    cat:'hot',    name:'新浪热榜',      char:'新', color:'#f6842e', sub:'实时热点榜',           api:'sina-hot',                        home:'https://news.sina.com.cn/' },
   { id:'netease',    cat:'hot',    name:'网易新闻',      char:'网', color:'#d0021b', sub:'热点新闻榜',           api:'netease', nohot:true,            home:'https://news.163.com/' },
-  { id:'github',     cat:'tech',   name:'GitHub 趋势',   char:'G',  color:'#8250df', sub:'Trending Today',      cid:'rYqoXQ8vOD', orz:'github',       home:'https://github.com/trending' },
-  { id:'juejin',     cat:'tech',   name:'掘金',          char:'掘', color:'#1e80ff', sub:'本周最热技术文章',     cid:'QaqeEaVe9R', orz:'juejin',       home:'https://juejin.cn/hot' },
-  { id:'sspai',      cat:'tech',   name:'少数派',        char:'少', color:'#e64552', sub:'高质量数字消费指南',   cid:'Y2KeDGQdNP', orz:'shaoshupai',   home:'https://sspai.com/' },
+  { id:'github',     cat:'tech',   name:'GitHub 趋势',   char:'G',  color:'#8250df', sub:'Trending Today',      cid:'rYqoXQ8vOD',       home:'https://github.com/trending' },
+  { id:'juejin',     cat:'tech',   name:'掘金',          char:'掘', color:'#1e80ff', sub:'本周最热技术文章',     cid:'QaqeEaVe9R',       home:'https://juejin.cn/hot' },
+  { id:'sspai',      cat:'tech',   name:'少数派',        char:'少', color:'#e64552', sub:'高质量数字消费指南',   cid:'Y2KeDGQdNP',   home:'https://sspai.com/' },
   { id:'ithome',     cat:'tech',   name:'IT之家',        char:'IT', color:'#d22222', sub:'科技资讯日榜',         cid:'74Kvx59dkx',                     home:'https://www.ithome.com/' },
-  { id:'kr36',       cat:'tech',   name:'36氪',          char:'36', color:'#0068ff', sub:'24 小时热榜',          cid:'Q1Vd5Ko85R', orz:'36kr',         home:'https://36kr.com/hot-list/catalog' },
+  { id:'kr36',       cat:'tech',   name:'36氪',          char:'36', color:'#0068ff', sub:'24 小时热榜',          cid:'Q1Vd5Ko85R',         home:'https://36kr.com/hot-list/catalog' },
   { id:'csdn',       cat:'tech',   name:'CSDN',          char:'C',  color:'#fc5531', sub:'综合热榜',             cid:'DgeyrgMoZq',                     home:'https://blog.csdn.net/rank/list' },
   { id:'zcool',      cat:'tech',   name:'站酷',          char:'酷', color:'#e07b00', sub:'热门设计作品榜',       cid:'VaobJ88oAj',                     home:'https://www.zcool.com.cn/' },
   { id:'huxiu',      cat:'tech',   name:'虎嗅',          char:'虎', color:'#d0021b', sub:'24小时热文',           cid:'5VaobgvAj1',                     home:'https://www.huxiu.com/' },
@@ -143,17 +143,17 @@ const SOURCES = [
   { id:'aljazeera',  cat:'global', name:'半岛电视台',    char:'半',  color:'#f7a800', sub:'国际新闻头条',         api:'rss', nohot:true, feed:'https://www.aljazeera.com/xml/rss/all.xml', home:'https://www.aljazeera.com/' },
   { id:'npr',        cat:'global', name:'NPR',           char:'NPR', color:'#d71920', sub:'Top Stories 头条新闻', api:'rss', nohot:true, feed:'https://feeds.npr.org/1001/rss.xml', home:'https://www.npr.org/sections/news/' },
   { id:'dw',         cat:'global', name:'德国之声',      char:'DW',  color:'#0091d5', sub:'World 国际新闻',       api:'rss', nohot:true, feed:'https://rss.dw.com/rdf/rss-en-world', home:'https://www.dw.com/en/world/s-1429' },
-  { id:'txnews',     cat:'news',   name:'腾讯新闻·热问', char:'腾', color:'#12b7f5', sub:'全网热议话题',         cid:'12owgX0oNV', orz:'tenxunwang',   home:'https://news.qq.com/' },
-  { id:'sina',       cat:'news',   name:'新浪财经',      char:'新', color:'#f6842e', sub:'点击量排行',           cid:'rx9ozj7oXb', orz:'sina_finance', home:'https://finance.sina.com.cn/' },
+  { id:'txnews',     cat:'news',   name:'腾讯新闻·热问', char:'腾', color:'#12b7f5', sub:'全网热议话题',         cid:'12owgX0oNV',   home:'https://news.qq.com/' },
+  { id:'sina',       cat:'news',   name:'新浪财经',      char:'新', color:'#f6842e', sub:'点击量排行',           cid:'rx9ozj7oXb', home:'https://finance.sina.com.cn/' },
   { id:'cbn',        cat:'news',   name:'第一财经',      char:'第', color:'#c0392b', sub:'新闻排行周榜',         cid:'0MdKam4ow1',                     home:'https://www.yicai.com/' },
-  { id:'xueqiu',     cat:'news',   name:'雪球',          char:'雪', color:'#0089e0', sub:'今日投资话题',         cid:'X12owXzvNV', orz:'xueqiu',       home:'https://xueqiu.com/' },
+  { id:'xueqiu',     cat:'news',   name:'雪球',          char:'雪', color:'#0089e0', sub:'今日投资话题',         cid:'X12owXzvNV',       home:'https://xueqiu.com/' },
   { id:'thepaper',   cat:'news',   name:'澎湃新闻',      char:'澎', color:'#e66a2c', sub:'热点新闻榜',           api:'thepaper', nohot:true,           home:'https://www.thepaper.cn/' },
   { id:'chinanews',  cat:'news',   name:'中国新闻网',    char:'中', color:'#c8102e', sub:'即时新闻',             api:'rss', nohot:true, feed:'https://www.chinanews.com.cn/rss/scroll-news.xml', home:'https://www.chinanews.com.cn/' },
   { id:'wallstreetcn', cat:'news', name:'华尔街见闻',    char:'华', color:'#d0021b', sub:'热门资讯',             cid:'G2me3ndwjq',                     home:'https://wallstreetcn.com/' },
-  { id:'bili',       cat:'fun',    name:'哔哩哔哩',      char:'B',  color:'#fb7299', sub:'全站日榜',             cid:'74KvxwokxM', orz:'bilibili',     home:'https://www.bilibili.com/v/popular/rank/all' },
-  { id:'douyin',     cat:'fun',    name:'抖音热点',      char:'抖', color:'#fe2c55', sub:'热门视频榜',           cid:'DpQvNABoNE', orz:'douyin',       home:'https://www.douyin.com/hot' },
+  { id:'bili',       cat:'fun',    name:'哔哩哔哩',      char:'B',  color:'#fb7299', sub:'全站日榜',             cid:'74KvxwokxM',     home:'https://www.bilibili.com/v/popular/rank/all' },
+  { id:'douyin',     cat:'fun',    name:'抖音热点',      char:'抖', color:'#fe2c55', sub:'热门视频榜',           cid:'DpQvNABoNE',       home:'https://www.douyin.com/hot' },
   { id:'douban',     cat:'fun',    name:'豆瓣电影',      char:'豆', color:'#42bd56', sub:'新片榜',               api:'douban',                        home:'https://movie.douban.com/chart' },
-  { id:'hupu',       cat:'fun',    name:'虎扑步行街',    char:'虎', color:'#c7232c', sub:'步行街热帖',           cid:'G47o8weMmN', orz:'hupu',         home:'https://bbs.hupu.com/all-gambia' },
+  { id:'hupu',       cat:'fun',    name:'虎扑步行街',    char:'虎', color:'#c7232c', sub:'步行街热帖',           cid:'G47o8weMmN',         home:'https://bbs.hupu.com/all-gambia' },
   { id:'weread',     cat:'fun',    name:'微信读书',      char:'读', color:'#00a99d', sub:'总榜',                 cid:'4KvxEX0dkx',                     home:'https://weread.qq.com/' },
   { id:'dongqiudi',  cat:'fun',    name:'懂球帝',        char:'球', color:'#16a34a', sub:'足球热点榜',           cid:'n3moBE1eN5', nohot:true,         home:'https://www.dongqiudi.com/' },
   { id:'kuaishou',   cat:'fun',    name:'快手',          char:'快', color:'#ff5000', sub:'快手热榜',             cid:'MZd7PrPerO',                     home:'https://www.kuaishou.com/' },
@@ -178,8 +178,8 @@ const ICONS = {
 };
 const iconURL = id => ICONS[id] ? `icons/${ICONS[id]}` : '';
 
-const API_CODELIFE = id => `https://api.codelife.cc/api/top/list?lang=cn&id=${encodeURIComponent(id)}`;
-const API_ORZ      = p  => `https://orz.ai/api/v1/dailynews/?platform=${encodeURIComponent(p)}`;
+/* 时间戳绕过 CDN 缓存，减少榜单滞后 */
+const API_CODELIFE = id => `https://api.codelife.cc/api/top/list?lang=cn&id=${encodeURIComponent(id)}&_=${Date.now()}`;
 const API_HN       = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=20';
 const API_DEVTO    = 'https://dev.to/api/articles?top=7&per_page=20';
 /* 豆瓣官方接口未开放 CORS，经 Redocly 公共代理读取官方页面 */
@@ -190,9 +190,13 @@ const API_X          = 'https://cors.redoc.ly/https://getdaytrends.com/';
 /* App Store 分区免费榜：iTunes RSS 未开放 CORS，经 Redocly 代理读取 */
 const API_ITUNES     = cc => `https://cors.redoc.ly/https://itunes.apple.com/${encodeURIComponent(cc)}/rss/topfreeapplications/limit=${SHOW}/json`;
 /* 综合与新闻热榜：读取平台公开榜单接口，经 Redocly 代理 */
+function sinaDay(d = new Date()){
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone:'Asia/Shanghai', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(d);
+  const pick = type => parts.find(p => p.type === type)?.value || '';
+  return pick('year') + pick('month') + pick('day');
+}
 const API_SINA_HOT   = () => {
-  const d = new Date();
-  const day = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  const day = sinaDay();
   return `https://cors.redoc.ly/https://top.news.sina.com.cn/ws/GetTopDataList.php?top_type=day&top_cat=www_www_all_suda_suda&top_time=${day}&top_show_num=50&top_order=DESC&js_var=all_1_data`;
 };
 const API_NETEASE    = 'https://cors.redoc.ly/https://m.163.com/fe/api/hot/news/flow';
@@ -208,21 +212,6 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const safeURL = u => /^https?:\/\//i.test(String(u ?? '')) ? u : '#';
 const pad = n => String(n).padStart(2,'0');
 const fmtTime = ts => new Date(ts).toTimeString().slice(0,8);
-const FONT_CSS = [
-  'https://cdn.jsdelivr.net/npm/@fontsource/zcool-qingke-huangyou@5/index.css',
-  'https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/400.css',
-  'https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/700.css',
-];
-function loadFonts(){
-  FONT_CSS.forEach(href => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    document.head.appendChild(link);
-  });
-}
-if (document.readyState === 'complete') setTimeout(loadFonts, 0);
-else window.addEventListener('load', loadFonts, { once:true });
 const FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>';
 const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.4-5.8-3-5.8 3 1.1-6.4L2.6 9.4l6.5-.9z"/></svg>';
 
@@ -235,6 +224,21 @@ function fmtHot(h){
   if (!isNaN(n) && n >= 1e4) return (n/1e4).toFixed(1) + '万';
   return s;
 }
+function cleanItems(arr){
+  if (!Array.isArray(arr)) return [];
+  return arr.map(it => {
+    if (!it || typeof it !== 'object') return null;
+    const title = String(it.title ?? '').replace(/\s+/g,' ').trim();
+    const url = String(it.url ?? '').trim();
+    if (!title || !/^https?:\/\//i.test(url)) return null;
+    return { title, url, hot: it.hot ?? '', score: it.score ?? '' };
+  }).filter(Boolean).slice(0, 100);
+}
+function fmtStamp(ts){
+  const d = new Date(ts), now = new Date();
+  const sameDay = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  return sameDay ? fmtTime(ts) : `${d.getMonth()+1}/${d.getDate()} ${fmtTime(ts)}`;
+}
 function cacheKey(src){
   return CACHE_PREFIX + src.id + (src.region ? ':' + src.region : '');
 }
@@ -243,8 +247,9 @@ function readCache(src){
     const raw = sessionStorage.getItem(cacheKey(src));
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (!data || !Number.isFinite(data.t) || !Array.isArray(data.items) || !data.items.length) return null;
-    return data;
+    if (!data || !Number.isFinite(data.t)) return null;
+    const items = cleanItems(data.items);
+    return items.length ? { t:data.t, items } : null;
   }catch(e){
     return null;
   }
@@ -262,23 +267,33 @@ function writeCache(src, items){
     }catch(_){}
   }
 }
-async function getJSON(url, timeout = 12000){
+async function getJSON(url, timeout = 12000, signal){
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeout);
+  const onAbort = () => ctrl.abort();
+  if (signal){ signal.aborted ? ctrl.abort() : signal.addEventListener('abort', onAbort, { once:true }); }
   try{
     const res = await fetch(url, { signal: ctrl.signal, headers:{ Accept:'application/json' } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
-  } finally { clearTimeout(timer); }
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', onAbort);
+  }
 }
-async function getText(url, timeout = 15000, accept = 'text/html'){
+async function getText(url, timeout = 15000, accept = 'text/html', signal){
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeout);
+  const onAbort = () => ctrl.abort();
+  if (signal){ signal.aborted ? ctrl.abort() : signal.addEventListener('abort', onAbort, { once:true }); }
   try{
     const res = await fetch(url, { signal: ctrl.signal, headers:{ Accept: accept } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.text();
-  } finally { clearTimeout(timer); }
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', onAbort);
+  }
 }
 function toast(msg){
   const box = $('#toasts');
@@ -301,8 +316,18 @@ tickClock(); setInterval(tickClock, 1000);
 /* ================= 主题切换 ================= */
 let themeTarget = document.documentElement.dataset.theme || 'light';
 let themeSwitchId = 0;
+function syncThemeColor(theme){
+  const metas = document.querySelectorAll('meta[name="theme-color"]');
+  const color = theme === 'dark' ? '#131519' : '#f3f2ec';
+  metas.forEach((meta, i) => {
+    if (i === 0){ meta.removeAttribute('media'); meta.content = color; }
+    else meta.remove();
+  });
+}
+syncThemeColor(themeTarget);
 function commitTheme(root, next){
   root.dataset.theme = next;
+  syncThemeColor(next);
   try { localStorage.setItem('hotboard-theme', next); } catch(e){}
 }
 $('#btn-theme').addEventListener('click', () => {
@@ -397,14 +422,22 @@ function indexList(ol, items){
   }
 }
 function renderItems(src, el, items){
+  const wasExpanded = src._expanded === true;
+  const active = document.activeElement;
+  const hadFocus = active && el.contains(active) && active.classList.contains('rk-t');
+  const focusIndex = hadFocus ? [...el.querySelectorAll('.rk-t')].indexOf(active) : -1;
   src._items = items;
-  src._hydrated = items.length <= SHOW;
-  src._expanded = false;
+  src._expanded = wasExpanded && items.length > SHOW;
+  src._hydrated = items.length <= SHOW || src._expanded;
   const body = el.querySelector('.card-bd');
-  body.innerHTML = listHTML(items.slice(0, SHOW));
+  body.innerHTML = listHTML(src._expanded ? items : items.slice(0, SHOW));
   const ol = body.querySelector('.ranklist');
-  if (items.length > SHOW) ol.classList.add('collapsed');
+  if (items.length > SHOW && !src._expanded) ol.classList.add('collapsed');
   indexList(ol, items);
+  if (focusIndex >= 0){
+    const links = el.querySelectorAll('.rk-t');
+    if (links[focusIndex]) links[focusIndex].focus({ preventScroll:true });
+  }
 }
 function ensureFullList(src, el){
   if (!src._items || src._hydrated) return;
@@ -442,13 +475,13 @@ function renderCardData(src, el, items, ts){
   const more = el.querySelector('.more');
   if (items.length > SHOW){
     ft.hidden = false;
-    if (more) more.textContent = `展开全部（共 ${items.length} 条）`;
+    if (more) more.textContent = src._expanded ? '收起榜单' : `展开全部（共 ${items.length} 条）`;
   }else{
     ft.hidden = !src.regions;
   }
   const ptime = el.querySelector('.ptime');
-  ptime.textContent = '更新于 ' + fmtTime(ts);
-  ptime.title = '';
+  ptime.textContent = '抓取于 ' + fmtStamp(ts);
+  ptime.title = src.api ? '抓取时间' : '抓取时间；数据来自 Codelife 第三方聚合，可能滞后官方';
 }
 function regionName(src){
   return (src.regions || []).find(r => r.id === src.region)?.name || '';
@@ -496,7 +529,7 @@ function buildCard(src){
       </span>
       <div class="pmeta">
         <h3><a href="${esc(sourceHome(src))}" target="_blank" rel="noopener noreferrer" title="访问「${esc(src.name)}」官方榜单">${esc(src.name)}<svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a></h3>
-        <p><span class="psub">${esc(sourceSub(src))}</span><span class="ptime">加载中…</span></p>
+        <p><span class="psub">${esc(sourceSub(src))}</span><span class="ptime">加载中…</span>${src.api ? '' : '<span class="src-tag" title="数据来自 Codelife 第三方聚合，可能滞后官方">第三方</span>'}</p>
       </div>
       <button class="iconbtn card-refresh" aria-label="刷新${esc(src.name)}" title="刷新本榜">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/></svg>
@@ -514,7 +547,7 @@ function buildCard(src){
     if (ol.classList.contains('collapsed')) ensureFullList(src, el);
     const collapsed = ol.classList.toggle('collapsed');
     src._expanded = !collapsed;
-    if (qInput.value.trim()) applySearch();
+    if (qInput.value.trim()) scheduleSearch();
     else if (collapsed) trimList(src, el);
     else this.textContent = '收起榜单';
   });
@@ -526,18 +559,15 @@ function buildCard(src){
       src.region = regionSelect.value;
       el.querySelector('.pmeta h3 a').href = sourceHome(src);
       el.querySelector('.psub').textContent = sourceSub(src);
-      src._state = 'loading';
-      loadCard(src, el, { clear:true }).finally(() => {
-        src._state = el.querySelector('.card-err') ? 'error' : 'loaded';
-      });
+      enqueueLoad(src, el, { force:true, clear:true, supersede:true });
     });
   }
   cardMap.set(src.id, el);
   return el;
 }
-async function loadDouban(){
+async function loadDouban(_src, signal){
   try{
-    const html = await getText(API_DOUBAN);
+    const html = await getText(API_DOUBAN, 15000, 'text/html', signal);
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const title = [...doc.querySelectorAll('h2')].find(el => el.textContent.includes('豆瓣新片榜'));
     const section = title?.closest('.article') || doc.querySelector('.article');
@@ -551,18 +581,19 @@ async function loadDouban(){
     }).filter(it => it.title && it.url) : [];
     if (items.length) return items;
   }catch(e){
+    if (signal?.aborted) throw e;
     console.warn('[hotboard] 豆瓣页面解析失败，尝试热门接口', e?.name === 'AbortError' ? '请求超时' : e);
   }
-  const j = await getJSON(API_DOUBAN_HOT);
+  const j = await getJSON(API_DOUBAN_HOT, 12000, signal);
   if (j && Array.isArray(j.subjects) && j.subjects.length){
     return j.subjects.map(it => ({ title: it.title, url: it.url, score: it.rate || '' }));
   }
   throw new Error('豆瓣数据异常');
 }
-async function loadX(src){
+async function loadX(src, signal){
   const region = src.region || 'united-states';
   const slug = region !== 'worldwide' ? `${region}/` : '';
-  const html = await getText(API_X + slug);
+  const html = await getText(API_X + slug, 15000, 'text/html', signal);
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const rows = [...doc.querySelectorAll('#trends tr, #moreTrends tr')].filter(row => row.querySelector('th.pos'));
   const items = rows.map(row => {
@@ -575,8 +606,8 @@ async function loadX(src){
   if (items.length) return items;
   throw new Error('X 趋势数据异常');
 }
-async function loadAppStore(src){
-  const j = await getJSON(API_ITUNES(src.region || 'us'), 20000);
+async function loadAppStore(src, signal){
+  const j = await getJSON(API_ITUNES(src.region || 'us'), 20000, signal);
   const entries = j?.feed?.entry;
   if (Array.isArray(entries) && entries.length){
     return entries.map(e => {
@@ -590,8 +621,8 @@ async function loadAppStore(src){
   }
   throw new Error('App Store 数据异常');
 }
-async function loadSinaHot(){
-  const txt = await getText(API_SINA_HOT(), 18000, 'application/javascript, application/json, text/plain, */*');
+async function loadSinaHot(_src, signal){
+  const txt = await getText(API_SINA_HOT(), 18000, 'application/javascript, application/json, text/plain, */*', signal);
   const start = txt.indexOf('{'), end = txt.lastIndexOf('}');
   if (start < 0 || end <= start) throw new Error('新浪热榜数据异常');
   const j = JSON.parse(txt.slice(start, end + 1));
@@ -599,16 +630,16 @@ async function loadSinaHot(){
   if (items.length) return items.slice(0, 30);
   throw new Error('新浪热榜数据异常');
 }
-async function loadNeteaseHot(){
-  const j = await getJSON(API_NETEASE, 18000);
+async function loadNeteaseHot(_src, signal){
+  const j = await getJSON(API_NETEASE, 18000, signal);
   const list = j?.data?.list;
   if (Array.isArray(list) && list.length){
     return list.map(it => ({ title: it.title, url: it.url })).filter(it => it.title && it.url).slice(0, 30);
   }
   throw new Error('网易新闻数据异常');
 }
-async function loadThePaperHot(){
-  const j = await getJSON(API_THEPAPER, 18000);
+async function loadThePaperHot(_src, signal){
+  const j = await getJSON(API_THEPAPER, 18000, signal);
   const list = j?.data?.hotNews;
   if (Array.isArray(list) && list.length){
     return list.map(it => ({
@@ -618,8 +649,8 @@ async function loadThePaperHot(){
   }
   throw new Error('澎湃新闻数据异常');
 }
-async function loadRSS(src){
-  const xml = await getText('https://cors.redoc.ly/' + src.feed, 18000, 'application/rss+xml, application/xml, text/xml, */*');
+async function loadRSS(src, signal){
+  const xml = await getText('https://cors.redoc.ly/' + src.feed, 18000, 'application/rss+xml, application/xml, text/xml, */*', signal);
   const doc = new DOMParser().parseFromString(xml, 'text/xml');
   if (doc.querySelector('parsererror')) throw new Error('RSS 解析失败');
   const items = [...doc.querySelectorAll('item, entry')].map(node => {
@@ -634,15 +665,15 @@ async function loadRSS(src){
   if (items.length) return items;
   throw new Error('新闻 RSS 数据异常');
 }
-async function loadHN(){
-  const j = await getJSON(API_HN);
+async function loadHN(_src, signal){
+  const j = await getJSON(API_HN, 12000, signal);
   if (j && Array.isArray(j.hits) && j.hits.length){
     return j.hits.map(h => ({ title: h.title, hot: h.points, url: h.url || `https://news.ycombinator.com/item?id=${h.objectID}` }));
   }
   throw new Error('Hacker News 数据异常');
 }
-async function loadDevto(){
-  const j = await getJSON(API_DEVTO);
+async function loadDevto(_src, signal){
+  const j = await getJSON(API_DEVTO, 12000, signal);
   if (Array.isArray(j) && j.length){
     return j.map(a => ({ title: a.title, hot: a.positive_reactions_count, url: a.url || 'https://dev.to' + a.path }));
   }
@@ -672,32 +703,28 @@ function validateSources(){
   });
 }
 validateSources();
-async function loadSource(src){
+async function loadSource(src, signal){
   const custom = LOADERS[src.api];
-  if (custom) return custom(src);
-  /* codelife 主源 */
-  try{
-    const j = await getJSON(API_CODELIFE(src.cid));
-    if (j && j.code === 200 && Array.isArray(j.data) && j.data.length){
-      return j.data.map(it => ({ title: it.title, hot: src.nohot ? '' : it.hotValue, url: it.link }));
-    }
-    throw new Error('主源数据异常');
-  }catch(e){
-    if (!src.orz) throw e;
-    console.warn('[hotboard] 主源失败，尝试备源', src.id, e?.name === 'AbortError' ? '请求超时' : e);
+  if (custom) return custom(src, signal);
+  const j = await getJSON(API_CODELIFE(src.cid), 12000, signal);
+  if (j && j.code === 200 && Array.isArray(j.data) && j.data.length){
+    return j.data.map(it => ({ title: it.title, hot: src.nohot ? '' : it.hotValue, url: it.link }));
   }
-  /* orz.ai 备源 */
-  const j = await getJSON(API_ORZ(src.orz));
-  if (j && String(j.status) === '200' && Array.isArray(j.data) && j.data.length){
-    return j.data.map(it => ({ title: it.title, hot: '', url: it.url }));
-  }
-  throw new Error('主备源均不可用');
+  throw new Error('主源数据异常');
+}
+function friendlyError(reason){
+  if (reason === '请求超时') return '请求超时，请稍后重试';
+  if (/^HTTP \d+/.test(reason)) return '数据源暂时不可用';
+  return '榜单加载失败，请稍后重试';
 }
 async function loadCard(src, el, { force = false, clear = false } = {}){
   const body = el.querySelector('.card-bd');
   const ft = el.querySelector('.card-ft');
   const btn = el.querySelector('.card-refresh');
   const seq = (src._seq = (src._seq || 0) + 1);
+  src._abort?.abort();
+  const ctrl = new AbortController();
+  src._abort = ctrl;
   if (clear){
     body.innerHTML = skeleton();
     el.querySelector('.ptime').textContent = '加载中…';
@@ -705,46 +732,59 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
     src._hydrated = false;
     src._count = 0;
     src._dataTs = 0;
-  }
-  const cached = readCache(src);
-  if (cached){
-    renderCardData(src, el, cached.items, cached.t);
+    src._top = null;
     scheduleTicker();
-    if (!force && Date.now() - cached.t < REFRESH_MS){
-      btn.classList.remove('spin');
-      if (qInput.value.trim()) applySearch();
-      return;
+  }
+  let cached = readCache(src);
+  if (cached){
+    try{
+      renderCardData(src, el, cached.items, cached.t);
+      scheduleTicker();
+      if (!force && Date.now() - cached.t < REFRESH_MS){
+        btn.classList.remove('spin');
+        if (qInput.value.trim()) scheduleSearch();
+        return { ok:true, shown:true, cached:true };
+      }
+    }catch(e){
+      console.warn('[hotboard] 缓存渲染失败', src.id, e);
+      cached = null;
     }
   }
   const previous = src._items ? { items: src._items, t: src._dataTs || Date.now() } : null;
   btn.classList.add('spin');
   if (!cached && !src._items) ft.hidden = !src.regions;
   try{
-    const items = await loadSource(src);
-    if (seq !== src._seq) return;
+    const items = cleanItems(await loadSource(src, ctrl.signal));
+    if (seq !== src._seq) return { ok:false, superseded:true };
     if (!items.length) throw new Error('空数据');
     writeCache(src, items);
     renderCardData(src, el, items, Date.now());
     scheduleTicker();
-    if (qInput.value.trim()) applySearch();
+    if (qInput.value.trim()) scheduleSearch();
+    return { ok:true, shown:true, count:items.length };
   }catch(e){
-    if (seq !== src._seq) return;
-    const reason = e?.name === 'AbortError' ? '请求超时' : (e?.message || e);
+    if (seq !== src._seq) return { ok:false, superseded:true };
+    const reason = e?.name === 'AbortError' ? '请求超时' : (e?.message || String(e));
     console.warn('[hotboard] 加载失败', src.id, reason);
     const fallback = cached || previous;
     if (fallback){
       renderCardData(src, el, fallback.items, fallback.t);
       const ptime = el.querySelector('.ptime');
-      ptime.textContent = (cached ? '缓存 · ' : '上次数据 · ') + fmtTime(fallback.t);
-      ptime.title = '网络刷新失败，显示' + (cached ? '缓存数据' : '上次成功数据');
+      ptime.textContent = (cached ? '缓存 · ' : '上次数据 · ') + fmtStamp(fallback.t);
+      ptime.title = `网络刷新失败（${reason}），显示${cached ? '缓存数据' : '上次成功数据'}`;
       scheduleTicker();
-      if (qInput.value.trim()) applySearch();
-    }else{
-      body.innerHTML = `<div class="card-err"><p>榜单加载失败，可能是网络波动</p><button class="retry">重新加载</button></div>`;
-      el.querySelector('.ptime').textContent = '加载失败';
-      body.querySelector('.retry').addEventListener('click', () => enqueueLoad(src, el, { force:true }));
+      if (qInput.value.trim()) scheduleSearch();
+      return { ok:false, shown:true, stale:true, reason };
     }
+    body.innerHTML = `<div class="card-err"><p>${friendlyError(reason)}<span class="err-detail">${esc(reason)}</span></p><button class="retry">重新加载</button></div>`;
+    el.querySelector('.ptime').textContent = '加载失败';
+    el.querySelector('.ptime').title = reason;
+    src._top = null;
+    scheduleTicker();
+    body.querySelector('.retry').addEventListener('click', () => enqueueLoad(src, el, { force:true }));
+    return { ok:false, shown:false, reason };
   }finally{
+    if (src._abort === ctrl) src._abort = null;
     if (seq === src._seq) btn.classList.remove('spin');
   }
 }
@@ -753,38 +793,87 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
 const loadQueue = [];
 let activeLoads = 0;
 function enqueueLoad(src, el, opts = {}){
-  if (!src || !el) return Promise.resolve();
-  if (src._state === 'queued' || src._state === 'loading') return Promise.resolve();
-  if (src._state === 'loaded' && !opts.force && !opts.reload) return Promise.resolve();
+  if (!src || !el) return Promise.resolve({ ok:false, reason:'missing-card' });
+  const pending = src._state === 'queued' || src._state === 'loading';
+  if (pending && !opts.supersede) return src._promise || Promise.resolve({ ok:false, superseded:true });
+  if (!pending && src._state === 'loaded' && !opts.force && !opts.reload && !opts.supersede) return Promise.resolve({ ok:true, skipped:true });
+  if (opts.supersede){
+    src._seq = (src._seq || 0) + 1;
+    src._abort?.abort();
+    for (let i = loadQueue.length - 1; i >= 0; i--){
+      if (loadQueue[i].src === src){
+        const old = loadQueue.splice(i, 1)[0];
+        old.resolve({ ok:false, superseded:true });
+      }
+    }
+  }
   src._state = 'queued';
-  return new Promise((resolve, reject) => {
-    loadQueue.push({ src, el, opts, resolve, reject });
-    drainLoadQueue();
-  });
+  let resolve;
+  const promise = new Promise(r => { resolve = r; });
+  const job = { src, el, opts, resolve, promise };
+  src._job = job;
+  src._promise = promise;
+  loadQueue.push(job);
+  drainLoadQueue();
+  return promise;
 }
 async function drainLoadQueue(){
   while (activeLoads < LOAD_CONCURRENCY && loadQueue.length){
     const job = loadQueue.shift();
     activeLoads++;
-    job.src._state = 'loading';
+    if (job.src._job === job) job.src._state = 'loading';
+    let result;
     try{
-      await loadCard(job.src, job.el, job.opts);
-      job.resolve();
+      result = await loadCard(job.src, job.el, job.opts);
     }catch(e){
-      job.reject(e);
-    }finally{
-      activeLoads--;
-      job.src._state = job.el.querySelector('.card-err') ? 'error' : 'loaded';
-      drainLoadQueue();
+      result = { ok:false, shown:false, reason:e?.message || String(e) };
     }
+    activeLoads--;
+    if (job.src._job === job){
+      job.src._state = result?.shown ? 'loaded' : 'error';
+      job.src._job = null;
+    }
+    if (job.src._promise === job.promise) job.src._promise = null;
+    job.resolve(result || { ok:false, shown:false, reason:'unknown' });
+    updateSourceAlert();
+    if (qInput.value.trim()) scheduleSearch();
+    drainLoadQueue();
   }
 }
 function loadGridCards(grid){
   grid?.querySelectorAll('.card').forEach(el => enqueueLoad(el._src, el));
 }
 function loadAllCards(){
-  SOURCES.forEach(src => enqueueLoad(src, cardMap.get(src.id)));
+  SOURCES.forEach(src => {
+    if (src._state !== 'error') enqueueLoad(src, cardMap.get(src.id));
+  });
 }
+let sourceAlertDismissedAt = 0;
+function updateSourceAlert(){
+  const alert = $('#src-alert');
+  if (!alert) return;
+  const failed = SOURCES.filter(s => s._state === 'error').length;
+  if (failed === 0) sourceAlertDismissedAt = 0;
+  const searching = !!qInput.value.trim();
+  const show = failed >= 3 || (searching && failed > 0);
+  if (!show || (sourceAlertDismissedAt && failed <= sourceAlertDismissedAt)){
+    alert.hidden = true;
+    return;
+  }
+  alert.hidden = false;
+  const text = $('#src-alert-text');
+  if (text) text.textContent = searching
+    ? `${failed} 个榜单来源失败，搜索结果可能不完整`
+    : `${failed} 个榜单数据源暂时不可用，部分卡片显示缓存或错误状态`;
+}
+$('#src-alert-close')?.addEventListener('click', () => {
+  sourceAlertDismissedAt = SOURCES.filter(s => s._state === 'error').length;
+  const alert = $('#src-alert');
+  if (alert) alert.hidden = true;
+});
+$('#src-retry')?.addEventListener('click', () => {
+  SOURCES.filter(s => s._state === 'error').forEach(src => enqueueLoad(src, cardMap.get(src.id), { force:true }));
+});
 
 /* 组装板块：分类标题 + 卡片 */
 const catGrids = [];
@@ -830,6 +919,7 @@ CATS.forEach(cat => {
       if (folded) searchFoldedCats.add(grid);
       else searchFoldedCats.delete(grid);
     }
+    if (qInput.value.trim()) scheduleSearch();
   });
 });
 
@@ -872,36 +962,69 @@ window.addEventListener('scroll', () => {
 
 /* ================= 分类页签 ================= */
 const tabsBox = $('#tabs');
+function setActiveTab(cat, load){
+  tabsBox.querySelectorAll('.tab').forEach(b => {
+    const on = b.dataset.cat === cat;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+  board.querySelectorAll('.card, .cat-label').forEach(el => el.classList.toggle('off', cat !== 'all' && el.dataset.cat !== cat));
+  const activeBtn = [...tabsBox.querySelectorAll('.tab')].find(b => b.dataset.cat === cat);
+  if (activeBtn) activeBtn.scrollIntoView({ inline:'center', block:'nearest' });
+  if (load && cat !== 'all') loadGridCards($('#grid-' + cat));
+}
 function buildTabs(){
   const all = [{ id:'all', name:'全部', n: SOURCES.length }, ...CATS.map(c => ({ id:c.id, name:c.name, n: SOURCES.filter(s => s.cat === c.id).length }))];
   tabsBox.innerHTML = all.map((t,i) =>
-    `<button class="tab${i===0?' on':''}" role="tab" aria-selected="${i===0}" data-cat="${t.id}">${t.name}<b>${t.n}</b></button>`).join('');
+    `<button class="tab${i===0?' on':''}" aria-pressed="${i===0}" data-cat="${t.id}">${t.name}<b>${t.n}</b></button>`).join('');
   tabsBox.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
-    tabsBox.querySelectorAll('.tab').forEach(b => { b.classList.remove('on'); b.setAttribute('aria-selected','false'); });
-    btn.classList.add('on'); btn.setAttribute('aria-selected','true');
-    const cat = btn.dataset.cat;
-    board.querySelectorAll('.card, .cat-label').forEach(el => {
-      el.classList.toggle('off', cat !== 'all' && el.dataset.cat !== cat);
-    });
-    if (cat !== 'all') loadGridCards($('#grid-' + cat));
+    const searching = !!qInput.value.trim();
+    if (searching) searchTabBefore = btn.dataset.cat;
+    setActiveTab(btn.dataset.cat, !searching);
+    if (searching) scheduleSearch();
   }));
 }
 buildTabs();
 
 /* ================= 搜索过滤 ================= */
-const qInput = $('#q'), sstat = $('#sstat');
-function hydrateAllLists(){
-  cardMap.forEach(el => {
-    const src = el._src;
-    if (src?._items) ensureFullList(src, el);
+const qInput = $('#q'), sstat = $('#sstat'), searchEmpty = $('#search-empty');
+let searchFrame = 0;
+let searchTabBefore = null;
+function scheduleSearch(){
+  if (searchFrame) return;
+  searchFrame = requestAnimationFrame(() => {
+    searchFrame = 0;
+    applySearch();
   });
+}
+function setSearchHint(el, text){
+  const body = el.querySelector('.card-bd');
+  if (!body) return;
+  let hint = body.querySelector('.search-hint');
+  if (!text){ if (hint) hint.remove(); return; }
+  if (!hint){
+    hint = document.createElement('p');
+    hint.className = 'search-hint';
+    body.prepend(hint);
+  }
+  hint.textContent = text;
 }
 function applySearch(){
   const q = qInput.value.trim().toLowerCase();
   const searching = !!q;
   if (searching){
+    if (searchTabBefore === null){
+      searchTabBefore = tabsBox.querySelector('.tab.on')?.dataset.cat || 'all';
+      if (searchTabBefore !== 'all'){
+        setActiveTab('all', false);
+        toast('搜索范围已切换到全部榜单');
+      }
+    }
     loadAllCards();
-    hydrateAllLists();
+  }else if (searchTabBefore !== null){
+    const restore = searchTabBefore;
+    searchTabBefore = null;
+    setActiveTab(restore, false);
   }
   if (searching && !searchFoldedCats){
     searchFoldedCats = new Set(catGrids.filter(g => g.classList.contains('folded')));
@@ -916,42 +1039,85 @@ function applySearch(){
   let total = 0;
   cardMap.forEach(el => {
     const ol = el.querySelector('.ranklist');
-    if (!ol){ el.classList.remove('dim'); return; }
+    if (!ol){ el.classList.remove('dim'); el.classList.toggle('search-hide', searching); return; }
     const lis = [...ol.querySelectorAll('.rk')];
     const ft = el.querySelector('.card-ft');
     const more = el.querySelector('.more');
     const hasRegion = el.classList.contains('has-region');
     const collapsed = ol.classList.contains('collapsed');
-    const cardTotal = el._src?._count ?? lis.length;
+    const src = el._src;
     if (!searching){
-      el.classList.remove('dim');
+      el.classList.remove('dim','search-hide');
+      setSearchHint(el, '');
       lis.forEach(li => li.classList.remove('hide','over'));
+      const cardTotal = src?._count ?? lis.length;
       if (ft && !hasRegion) ft.hidden = cardTotal <= SHOW;
       if (more) more.textContent = collapsed ? `展开全部（共 ${cardTotal} 条）` : '收起榜单';
       return;
     }
-    let hits = 0;
+    if (el.classList.contains('off')){
+      el.classList.remove('dim');
+      setSearchHint(el, '');
+      lis.forEach(li => li.classList.remove('hide','over'));
+      return;
+    }
+    const items = src?._items || [];
+    const totalHits = items.reduce((n, it) => n + (String(it?.title || '').toLowerCase().includes(q) ? 1 : 0), 0);
+    const firstHit = items.findIndex(it => String(it?.title || '').toLowerCase().includes(q));
+    let seen = 0, visible = 0;
     lis.forEach(li => {
       const text = li._search ?? li.querySelector('.rk-t').textContent.toLowerCase();
       const hit = text.includes(q);
-      if (hit) hits++;
+      if (hit) seen++;
       li.classList.toggle('hide', !hit);
-      li.classList.toggle('over', hit && collapsed && hits > SHOW);
+      const over = hit && collapsed && seen > SHOW;
+      li.classList.toggle('over', over);
+      if (hit && !over) visible++;
     });
-    total += hits;
-    el.classList.toggle('dim', hits === 0);
+    total += totalHits;
+    el.classList.toggle('dim', totalHits === 0);
+    el.classList.toggle('search-hide', totalHits === 0);
+    if (totalHits > 0 && visible === 0){
+      setSearchHint(el, firstHit >= 0 ? `匹配内容在列表第 ${firstHit + 1} 条，展开后查看` : '匹配内容在列表更下方，展开后查看');
+    }else{
+      setSearchHint(el, '');
+    }
     if (ft && !hasRegion){
-      ft.hidden = hits <= SHOW;
-      if (!ft.hidden && more) more.textContent = collapsed ? `展开全部（匹配 ${hits} 条）` : '收起榜单';
+      const showMore = totalHits > SHOW || (totalHits > 0 && (seen === 0 || (collapsed && lis.length > SHOW))) || (!collapsed && items.length > SHOW);
+      ft.hidden = !showMore;
+      if (showMore && more) more.textContent = collapsed ? `展开全部（匹配 ${totalHits} 条）` : '收起榜单';
     }
   });
+  catGrids.forEach(grid => {
+    const label = grid.previousElementSibling;
+    const hasMatch = searching && [...grid.querySelectorAll('.card')].some(c => !c.classList.contains('off') && !c.classList.contains('search-hide'));
+    grid.classList.toggle('search-hide', searching && !hasMatch);
+    if (label) label.classList.toggle('search-hide', searching && !hasMatch);
+  });
+  const pending = SOURCES.some(s => s._state === 'queued' || s._state === 'loading');
+  const failures = SOURCES.filter(s => s._state === 'error').length;
   sstat.hidden = !searching;
-  if (searching) sstat.textContent = `匹配 ${total} 条`;
+  if (searching){
+    const activeCat = tabsBox.querySelector('.tab.on')?.dataset.cat || 'all';
+    if (pending) sstat.textContent = `搜索中 · ${total} 条`;
+    else if (failures && total === 0) sstat.textContent = `搜索受限 · ${failures} 个`;
+    else sstat.textContent = activeCat === 'all' ? `匹配 ${total} 条` : `当前分类 · ${total} 条`;
+    sstat.title = failures ? `${failures} 个来源失败，结果可能不完整` : '';
+  }
+  searchEmpty.hidden = !(searching && total === 0);
+  if (searching && total === 0){
+    searchEmpty.textContent = pending
+      ? '正在搜索全部榜单…'
+      : failures
+        ? `有 ${failures} 个榜单数据源暂时不可用，暂时无法确认是否匹配，可稍后重试。`
+        : '没有找到匹配的内容，试试更短的关键词。';
+  }
+  updateSourceAlert();
 }
 let searchTimer = null;
 qInput.addEventListener('input', () => {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(applySearch, 120);
+  searchTimer = setTimeout(scheduleSearch, 120);
 });
 $('#q-clr').addEventListener('click', () => {
   clearTimeout(searchTimer);
@@ -980,15 +1146,38 @@ function scheduleTicker(){
 }
 function buildTicker(){
   const tops = SOURCES.filter(s => s._top);
-  if (!tops.length) return;
+  const track = $('#tk-track');
+  if (!tops.length){
+    track.innerHTML = '<span class="tk-empty">正在汇聚全网热点…</span>';
+    track.style.removeProperty('--dur');
+    return;
+  }
   const html = tops.map(s => {
     const icon = iconURL(s.id);
     return `<a class="tk" href="${esc(safeURL(s._top.url))}" target="_blank" rel="noopener noreferrer"><i class="${icon ? '' : 'noicon'}" style="--pc:${s.color}">${icon ? `<img src="${esc(icon)}" alt="" loading="lazy">` : ''}<b>${esc(s._top.char)}</b></i>${esc(s._top.title)}</a>`;
   }).join('');
-  const track = $('#tk-track');
   track.style.setProperty('--dur', Math.max(60, tops.length * 5) + 's');
   track.innerHTML = `<div class="tk-group">${html}</div><div class="tk-group" aria-hidden="true">${html}</div>`;
   track.querySelectorAll('.tk i img').forEach(img => img.addEventListener('error', () => img.parentElement.classList.add('noicon')));
+}
+const tkView = document.querySelector('.tk-view');
+if (tkView){
+  let tkResume = 0;
+  const pauseTicker = () => {
+    clearTimeout(tkResume);
+    const track = $('#tk-track');
+    if (track) track.style.animationPlayState = 'paused';
+  };
+  const resumeTicker = () => {
+    clearTimeout(tkResume);
+    tkResume = setTimeout(() => {
+      const track = $('#tk-track');
+      if (track) track.style.animationPlayState = '';
+    }, 2500);
+  };
+  tkView.addEventListener('touchstart', pauseTicker, { passive:true });
+  tkView.addEventListener('touchend', resumeTicker, { passive:true });
+  tkView.addEventListener('touchcancel', resumeTicker, { passive:true });
 }
 
 /* ================= 加载与自动刷新 ================= */
@@ -996,6 +1185,10 @@ let nextAt = Date.now() + REFRESH_MS;
 let refreshing = false;
 async function refreshAll(silent, force = true, onlyLoaded = false){
   if (refreshing) return;
+  if (silent && (qInput.value.trim() || dInfo.open)){
+    nextAt = Date.now() + REFRESH_MS;
+    return;
+  }
   refreshing = true;
   const btn = $('#btn-refresh');
   btn.classList.add('spin');
@@ -1009,10 +1202,21 @@ async function refreshAll(silent, force = true, onlyLoaded = false){
       const tb = eb && eb.offsetParent !== null ? eb.getBoundingClientRect().top : Infinity;
       return ta - tb;
     });
-    await Promise.allSettled(ordered.map(src => enqueueLoad(src, cardMap.get(src.id), { force })));
+    const results = await Promise.all(ordered.map(src => enqueueLoad(src, cardMap.get(src.id), { force })));
+    const failedPairs = results.map((r, i) => ({ r, src: ordered[i] })).filter(x => x.r && !x.r.ok && !x.r.superseded);
+    const okCount = results.filter(r => r?.ok).length;
     buildTicker();
     nextAt = Date.now() + REFRESH_MS;
-    if (!silent) toast('已更新 · ' + new Date().toTimeString().slice(0,5));
+    if (!silent){
+      const time = new Date().toTimeString().slice(0,5);
+      if (failedPairs.length){
+        const names = failedPairs.map(x => x.src.name);
+        const label = names.slice(0, 2).join('、') + (names.length > 2 ? ' 等' : '');
+        toast(`已更新 ${okCount} 个，${failedPairs.length} 个失败：${label}`);
+      }else{
+        toast('已更新 · ' + time);
+      }
+    }
   }finally{
     btn.classList.remove('spin');
     refreshing = false;

@@ -1,8 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { collectFontText } from './font-text.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(root, 'index.html'), 'utf8');
@@ -23,7 +24,31 @@ const inlineScript = html.match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script
 const inlineHash = createHash('sha256').update(inlineScript.replace(/\r\n/g, '\n'), 'utf8').digest('base64');
 check('CSP 内联脚本哈希与主题脚本一致', cspHash === inlineHash, `CSP hash ${cspHash || '(missing)'} 与脚本 hash ${inlineHash} 不一致`);
 check('CSP 包含 Referrer-Policy', /<meta\s+name="referrer"\s+content="strict-origin-when-cross-origin"/i.test(html));
-check('CSP connect-src 覆盖榜单接口', ['api.codelife.cc', 'cors.redoc.ly', 'hn.algolia.com', 'dev.to'].every(host => csp.includes(host)));
+const apiHosts = new Set();
+for (const apiBlock of js.matchAll(/const API_[A-Z_]+[\s\S]*?(?=\nconst |\n\/\*|$)/g)) {
+  for (const url of apiBlock[0].matchAll(/https:\/\/[^'"`\s]+/g)) {
+    try { apiHosts.add(new URL(url[0]).host); } catch {}
+  }
+}
+const missingHosts = [...apiHosts].filter(host => !csp.includes('https://' + host));
+check('CSP connect-src 覆盖所有 API 主机', missingHosts.length === 0, `缺少 ${missingHosts.join(', ')}`);
+check('CSP 字体仅允许本站', /font-src\s+'self'(?:;|$)/.test(csp));
+
+const fontFiles = ['fonts/zcool-ui.woff2', 'fonts/jetbrains-mono-400.woff2', 'fonts/jetbrains-mono-700.woff2'];
+check('字体文件存在且非空', fontFiles.every(file => {
+  const path = join(root, file);
+  return existsSync(path) && statSync(path).size > 1024;
+}));
+const fontTextPath = join(root, 'fonts/zcool-ui.txt');
+const fontText = existsSync(fontTextPath) ? readFileSync(fontTextPath, 'utf8').replace(/\r?\n$/, '') : '';
+check('字体子集与展示文案一致', fontText === collectFontText(root).text, '运行 node scripts/build-fonts.mjs');
+const css = readFileSync(join(root, 'hot.css'), 'utf8');
+const faceUrls = [...css.matchAll(/url\('(fonts\/[^']+)'\)/g)].map(m => m[1]);
+check('@font-face 指向存在的字体', faceUrls.length === 3 && faceUrls.every(file => existsSync(join(root, file))), faceUrls.join(','));
+const fontPreloads = [...html.matchAll(/<link\s+rel="preload"\s+as="font"[^>]*href="([^"]+)"/g)].map(m => m[1]);
+check('字体预载文件存在', fontPreloads.length > 0 && fontPreloads.every(file => existsSync(join(root, file))), fontPreloads.join(','));
+const show = Number(js.match(/const SHOW = (\d+)/)?.[1]);
+check('SHOW 与折叠 CSS 一致', show > 0 && new RegExp('nth-child\\(n\\+' + (show + 1) + '\\)').test(css));
 
 const catsBlock = js.match(/const CATS = \[([\s\S]*?)\n\];/)?.[1] || '';
 const catIds = [...catsBlock.matchAll(/id:'([^']+)'/g)].map(m => m[1]);

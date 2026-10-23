@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>runtime tests pending</title>
+<style>
+  html,body{margin:0;background:#fff;font:12px/1.4 monospace}
+  #frames{position:absolute;left:0;top:0;width:1700px;height:1100px;overflow:hidden}
+  #frames iframe{display:block;border:0}
+  #result{position:absolute;left:-9999px;top:0;white-space:pre}
+</style>
+</head>
+<body>
+<img id="hold" src="/hold" alt="" style="display:none">
+<div id="frames"></div>
+<pre id="result">pending</pre>
+<script>
+window.__testFinished = false;
+window.addEventListener('error', event => {
+  if (window.__testFinished) return;
+  window.__testFinished = true;
+  const text = JSON.stringify({
+    ok: false,
+    results: [{ name: 'harness', ok: false, error: String(event.message || event.error || 'error') }],
+  });
+  const encoded = btoa(unescape(encodeURIComponent(text)));
+  document.title = 'RESULT:' + encoded;
+  const pre = document.getElementById('result');
+  if (pre) pre.textContent = encoded;
+  fetch('/done', { method: 'POST', body: encoded }).catch(() => {});
+});
+</script>
+<script>
+(async () => {
+  const results = [];
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const pass = (name, info = {}) => results.push({ name, ok: true, info });
+  const fail = (name, error) => results.push({ name, ok: false, error: String(error && error.stack || error) });
+  const rgb = value => (String(value).match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+  const luminance = value => {
+    const [r, g, b] = rgb(value).map(v => {
+      const x = v / 255;
+      return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a, b) => {
+    const l1 = luminance(a), l2 = luminance(b);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  };
+  const encode = value => btoa(unescape(encodeURIComponent(value)));
+
+  function finish() {
+    if (window.__testFinished) return;
+    window.__testFinished = true;
+    const summary = { ok: results.every(item => item.ok), results };
+    const encoded = encode(JSON.stringify(summary));
+    document.title = 'RESULT:' + encoded;
+    const pre = document.getElementById('result');
+    if (pre) pre.textContent = encoded;
+    fetch('/done', { method: 'POST', body: encoded }).catch(() => {});
+  }
+
+  const watchdog = setTimeout(() => {
+    if (!window.__testFinished) {
+      results.push({ name: 'watchdog', ok: false, error: 'runtime test timeout' });
+      finish();
+    }
+  }, 20000);
+
+  try {
+    localStorage.setItem('hotboard-theme', 'light');
+    const template = await fetch('/index.html').then(response => response.text());
+    const fixtureTag = '<script src="tests/fixtures.js"></' + 'script>';
+    const testDoc = template
+      .replace(/<meta[^>]+http-equiv="Content-Security-Policy"[^>]*>/i, '')
+      .replace('<head>', `<head><base href="${location.origin}/">`)
+      .replace('<script src="hot.js', fixtureTag + '<script src="hot.js');
+
+    if (!testDoc.includes('tests/fixtures.js')) throw new Error('could not inject fixtures before hot.js');
+
+    async function frame(width, height) {
+      const iframe = document.createElement('iframe');
+      iframe.style.width = width + 'px';
+      iframe.style.height = height + 'px';
+      const loaded = new Promise((resolvePromise, reject) => {
+        iframe.onload = resolvePromise;
+        setTimeout(() => reject(new Error('iframe load timeout')), 5000);
+      });
+      iframe.srcdoc = testDoc;
+      document.getElementById('frames').appendChild(iframe);
+      await loaded;
+      await sleep(1100);
+      return iframe;
+    }
+
+    function close(iframe) {
+      iframe.remove();
+    }
+
+    function card(doc, id) {
+      return [...doc.querySelectorAll('.card')].find(element => element._src?.id === id);
+    }
+
+    async function scenario(name, run) {
+      let iframe;
+      try {
+        const output = await run({
+          open: async (width, height) => (iframe = await frame(width, height)),
+          close: () => close(iframe),
+        });
+        pass(name, output || {});
+      } catch (error) {
+        fail(name, error);
+        if (iframe) close(iframe);
+      }
+      await sleep(120);
+    }
+
+    await scenario('basics', async ({ open, close }) => {
+      const iframe = await open(1200, 900);
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      const cards = doc.querySelectorAll('.card').length;
+      const cats = doc.querySelectorAll('.cat-label').length;
+      const tabs = doc.querySelectorAll('.tab').length;
+      const loaded = doc.querySelectorAll('.ranklist').length;
+      const errors = win.__errors || [];
+      const requests = win.__fetches.length;
+      close();
+      if (cards !== 46) throw new Error(`expected 46 cards, got ${cards}`);
+      if (cats !== 5) throw new Error(`expected 5 categories, got ${cats}`);
+      if (tabs !== 6) throw new Error(`expected 6 tabs, got ${tabs}`);
+      if (!loaded) throw new Error('no card loaded from fixtures');
+      if (errors.length) throw new Error(`runtime errors: ${errors.join(' | ')}`);
+      return { cards, cats, tabs, loaded, requests };
+    });
+
+    await scenario('hidden-lazy', async ({ open, close }) => {
+      const iframe = await open(1200, 900);
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      const tech = doc.querySelector('.tab[data-cat="tech"]');
+      if (!tech) throw new Error('tech tab missing');
+      tech.click();
+      await sleep(500);
+      win.scrollTo(0, 1200);
+      await sleep(700);
+      const target = card(doc, 'imdb');
+      if (!target) throw new Error('imdb card missing');
+      const loaded = !!target.querySelector('.ranklist');
+      const cid = target._src?.cid || '';
+      const fetched = cid ? win.__fetches.filter(url => url.includes(cid)) : [];
+      close();
+      if (loaded || fetched.length) throw new Error(`hidden imdb was loaded (ranklist=${loaded}, requests=${fetched.length})`);
+      return { hidden: 'imdb', ranklist: loaded, requestsForHidden: fetched.length };
+    });
+
+    await scenario('desktop-rail', async ({ open, close }) => {
+      const iframe = await open(1550, 900);
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      win.scrollTo(0, 600);
+      await sleep(350);
+      const floats = doc.querySelector('.floats')?.getBoundingClientRect();
+      const rights = [...doc.querySelectorAll('.card')].map(element => element.getBoundingClientRect().right).filter(value => value > 0);
+      const maxRight = rights.length ? Math.max(...rights) : 0;
+      close();
+      if (!floats) throw new Error('floats missing');
+      if (floats.left < maxRight - 1) throw new Error(`floats overlap cards: floats.left=${floats.left.toFixed(1)} maxCardRight=${maxRight.toFixed(1)}`);
+      return { floatsLeft: Number(floats.left.toFixed(1)), maxCardRight: Number(maxRight.toFixed(1)) };
+    });
+
+    await scenario('mobile-targets', async ({ open, close }) => {
+      const iframe = await open(390, 844);
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      const search = doc.querySelector('#q')?.getBoundingClientRect();
+      const cat = doc.querySelector('.cat-toggle')?.getBoundingClientRect();
+      const more = [...doc.querySelectorAll('.more')].find(element => element.getClientRects().length && getComputedStyle(element).display !== 'none')?.getBoundingClientRect();
+      const sizes = { search: search?.height || 0, category: cat?.height || 0, more: more?.height || 0 };
+      win.scrollTo(0, 600);
+      await sleep(500);
+      const floatTop = doc.querySelector('#f-top');
+      const floatBot = doc.querySelector('#f-bottom');
+      const floatsShown = { top: floatTop.classList.contains('show'), bottom: floatBot.classList.contains('show') };
+      const floatsState = {
+        topOpacity: getComputedStyle(floatTop).opacity,
+        bottomOpacity: getComputedStyle(floatBot).opacity,
+        floatsDisplay: getComputedStyle(doc.querySelector('.floats')).display,
+        rect: (() => { const r = floatTop.getBoundingClientRect(); return { left: Math.round(r.left), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom) }; })(),
+        y: Math.round(win.scrollY),
+        vh: win.innerHeight,
+        sh: doc.documentElement.scrollHeight,
+      };
+      close();
+      if (sizes.search < 44) throw new Error(`search target ${sizes.search}px < 44px`);
+      if (sizes.category < 44) throw new Error(`category target ${sizes.category}px < 44px`);
+      if (sizes.more < 44) throw new Error(`more target ${sizes.more}px < 44px`);
+      if (!floatsShown.top && !floatsShown.bottom) throw new Error('mobile floating buttons did not show after scroll');
+
+      const second = await open(390, 844);
+      const d = second.contentDocument;
+      const q = d.querySelector('#q');
+      q.value = 'Fixture';
+      q.dispatchEvent(new Event('input', { bubbles: true }));
+      await sleep(700);
+      const searching = d.body.classList.contains('searching');
+      const statusVisible = !d.querySelector('#sstat').hidden;
+      d.querySelector('#q-clr').click();
+      await sleep(300);
+      const cleared = !d.body.classList.contains('searching');
+      close();
+      if (!searching || !statusVisible) throw new Error('search state did not activate');
+      if (!cleared) throw new Error('search clear did not restore state');
+      return { sizes, floatsShown, floatsState, searching, cleared };
+    });
+
+    await scenario('light-contrast', async ({ open, close }) => {
+      const iframe = await open(1200, 900);
+      const doc = iframe.contentDocument;
+      const target = [...doc.querySelectorAll('.card')].find(element => element.querySelector('.ranklist'));
+      if (!target) throw new Error('no loaded card for contrast check');
+      const cardBg = getComputedStyle(target).backgroundColor;
+      const timeColor = getComputedStyle(target.querySelector('.ptime')).color;
+      const subColor = getComputedStyle(target.querySelector('.psub')).color;
+      const timeRatio = contrast(timeColor, cardBg);
+      const subRatio = contrast(subColor, cardBg);
+      close();
+      if (timeRatio < 4.5) throw new Error(`timestamp contrast ${timeRatio.toFixed(2)} < 4.5`);
+      if (subRatio < 4.5) throw new Error(`muted text contrast ${subRatio.toFixed(2)} < 4.5`);
+      return { timestamp: Number(timeRatio.toFixed(2)), muted: Number(subRatio.toFixed(2)) };
+    });
+
+    await scenario('safe-url', async ({ open, close }) => {
+      const iframe = await open(1200, 900);
+      const doc = iframe.contentDocument;
+      const first = [...doc.querySelectorAll('.card')].find(element => element.querySelector('.ranklist'))?.querySelector('.rk-t');
+      if (!first) throw new Error('no rendered link');
+      const href = first.getAttribute('href');
+      let username = '', password = '';
+      try {
+        const parsed = new URL(first.href);
+        username = parsed.username;
+        password = parsed.password;
+      } catch {}
+      close();
+      if (username || password) throw new Error(`credential URL not sanitized: ${href}`);
+      return { href, username, password };
+    });
+
+    clearTimeout(watchdog);
+    finish();
+  } catch (error) {
+    clearTimeout(watchdog);
+    results.push({ name: 'harness', ok: false, error: String(error && error.stack || error) });
+    finish();
+  }
+})();
+</script>
+</body>
+</html>

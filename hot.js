@@ -209,7 +209,17 @@ const CACHE_PREFIX = 'hotboard-cache-v1:';
 /* ================= 工具 ================= */
 const $  = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const safeURL = u => /^https?:\/\//i.test(String(u ?? '')) ? u : '#';
+const safeURL = u => {
+  const s = String(u ?? '').trim();
+  if (!/^https?:\/\//i.test(s)) return '#';
+  try {
+    const url = new URL(s);
+    if (!/^https?:$/.test(url.protocol) || url.username || url.password) return '#';
+    return url.href;
+  } catch {
+    return '#';
+  }
+};
 const pad = n => String(n).padStart(2,'0');
 const fmtTime = ts => new Date(ts).toTimeString().slice(0,8);
 const FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>';
@@ -946,6 +956,7 @@ function loadNearViewport(){
   const margin = 600;
   const vh = window.innerHeight || 900;
   cardMap.forEach(el => {
+    if (!el.getClientRects().length) return;
     const r = el.getBoundingClientRect();
     if (r.top < vh + margin && r.bottom > -margin) enqueueLoad(el._src, el);
   });

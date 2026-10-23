@@ -44,14 +44,19 @@ hotboard/
 ├── index.html   # 页面结构、CSP、主题预渲染脚本、免责声明弹窗
 ├── hot.css      # 主题变量、布局、卡片、弹窗与响应式样式
 ├── hot.js       # 数据抓取、缓存、渲染、搜索、刷新与页面交互
+├── og-image.png # 1200 × 630 社交分享封面
 ├── icons/       # 46 个平台的官方图标（PNG / SVG / JPG / ICO）
 ├── fonts/       # 自托管字体子集、字符清单与 OFL 许可证
 ├── scripts/
 │   ├── check.mjs      # 零依赖：CSP、字体子集、榜单配置、图标与语法检查
 │   ├── build-fonts.mjs # 重新生成 ZCOOL 子集并下载 JetBrains Mono
 │   └── font-text.mjs  # 从配置提取使用展示字体的文案字符
+├── tests/
+│   ├── runtime.html   # 浏览器运行时断言页（本地夹具，不访问外网）
+│   ├── fixtures.js    # 为 46 个来源提供稳定的测试响应
+│   └── runtime.mjs    # 启动本地 HTTP + 系统 Chrome 执行运行时测试
 ├── .github/
-│   └── workflows/check.yml # push / PR 自动运行检查
+│   └── workflows/check.yml # push / PR 自动运行静态与浏览器测试
 ├── .gitignore   # 忽略依赖、环境文件、日志和系统临时文件
 └── README.md    # 项目说明
 ```
@@ -126,7 +131,15 @@ npx serve .
 node scripts/check.mjs
 ```
 
-检查 CSP 内联脚本哈希、所有 API 主机覆盖、字体文件与子集文本一致性、字体预载、`SHOW` 与折叠 CSS 一致性、榜单数量与唯一 id、分类、默认地区、图标映射与 `hot.js` 语法；CI 在 push / pull request 时自动执行同一脚本。
+检查 CSP 内联脚本哈希、所有 API 主机覆盖、字体文件与子集文本一致性、字体预载、`SHOW` 与折叠 CSS 一致性、榜单数量与唯一 id、分类、默认地区、图标映射与 `hot.js` 语法。
+
+浏览器运行时测试使用本地 HTTP + 系统 Chrome，不访问外部 API：
+
+```bash
+node tests/runtime.mjs
+```
+
+覆盖懒加载边界、移动端触控尺寸、浅色对比度、悬浮按钮与卡片的几何关系、搜索状态和凭据 URL；CI 在 push / pull request 时自动执行静态检查和浏览器测试。若 Chrome 不在 PATH，可通过 `CHROME_BIN` 指定路径。
 
 ### 部署
 
@@ -220,15 +233,15 @@ const ICONS = {
 ## 技术说明
 
 - **技术栈**：HTML5 / CSS3 / JavaScript（ES2020+），无第三方运行时依赖。
-- **数据请求**：`fetch` + `AbortController` 超时控制，请求可被新的地区切换取消；首屏附近的卡片在视口加载，滚动/分类/搜索/手动全部刷新时补载，最多 6 路并发；刷新会等待在途任务真实结束，并汇总失败数量。豆瓣与 X 趋势页面通过 `DOMParser` 解析，App Store 使用 iTunes RSS JSON，海外媒体与中国新闻网使用 RSS / Atom XML，新浪、网易、澎湃热榜使用平台 JSON 接口；Codelife 请求带时间戳绕过 CDN 缓存。
+- **数据请求**：`fetch` + `AbortController` 超时控制，请求可被新的地区切换取消；首屏附近的卡片在视口加载，滚动/分类/搜索/手动全部刷新时补载，隐藏的分类卡片不会被兜底逻辑提前请求，最多 6 路并发；刷新会等待在途任务真实结束，并汇总失败数量。豆瓣与 X 趋势页面通过 `DOMParser` 解析，App Store 使用 iTunes RSS JSON，海外媒体与中国新闻网使用 RSS / Atom XML，新浪、网易、澎湃热榜使用平台 JSON 接口；Codelife 请求带时间戳绕过 CDN 缓存。
 - **缓存与渲染**：会话内按 `id + region` 使用 `sessionStorage` 缓存，先渲染缓存再后台刷新；条目读取时统一校验标题与 http(s) 链接，跨日缓存显示日期。列表默认只生成前 10 条 DOM，展开时补全，收起/清空搜索后回收；搜索只统计已加载条目，不再批量 hydrate 每张卡片，并隐藏无命中卡片、提示首屏外的命中位置。刷新保留展开状态和列表焦点。卡片使用 `content-visibility: auto` 跳过视口外渲染，并按骨架/已加载状态分别设置 `contain-intrinsic-size`；骨架屏在未进入视口时暂停动画，主题切换期间临时关闭全页过渡并使用 View Transition 播放主题交叉淡化。
 - **安全策略**：`index.html` 通过 meta CSP 限制脚本、样式、字体与 fetch 目标；字体仅允许本站，fetch 目标覆盖 Codelife、Redocly、HN 与 dev.to；并设置 `strict-origin-when-cross-origin`。GitHub Pages 不支持自定义响应头，`frame-ancestors` 等指令仍需反向代理。
-- **自动校验**：`scripts/check.mjs` 校验 CSP 哈希与所有 API 主机覆盖、字体文件与子集文本一致性、字体预载、`SHOW` 与折叠 CSS 一致性、46 个榜单配置、唯一 id、默认地区、图标文件和 JS 语法；GitHub Actions 在 push / PR 时运行。
-- **渲染**：模板字符串构建卡片，所有远程文本经 HTML 转义后输出，外部链接仅允许 http/https；骨架屏占位，`IntersectionObserver` 实现滚动浮现。
+- **自动校验**：`scripts/check.mjs` 校验 CSP 哈希与所有 API 主机覆盖、字体文件与子集文本一致性、字体预载、`SHOW` 与折叠 CSS 一致性、46 个榜单配置、唯一 id、默认地区、图标文件和 JS 语法；`tests/runtime.mjs` 使用本地夹具和系统 Chrome 验证懒加载边界、44px 触控目标、浅色对比度、悬浮按钮几何关系、搜索与 URL 安全。GitHub Actions 在 push / PR 时运行两组测试。
+- **渲染**：模板字符串构建卡片，所有远程文本经 HTML 转义后输出，外部链接仅允许 http/https，并拒绝带用户名或密码的 URL；骨架屏占位，`IntersectionObserver` 实现滚动浮现。
 - **分类与地区**：分类标题按钮通过 `aria-expanded` / `aria-controls` 控制对应网格；分类筛选使用 `role="group"` + `aria-pressed` 按钮；地区选择器按当前 `region` 重新请求数据，并同步卡片副标题，App Store 同时更新官方链接。
 - **主题系统**：CSS 自定义属性 + `data-theme`，`<head>` 内联脚本在样式加载前确定主题；手动切换先抑制逐元素过渡，支持的浏览器通过 View Transition 进行主题交叉淡化，不支持时使用双 `requestAnimationFrame` 降级为瞬时切换；`prefers-reduced-motion` 下直接切换。`color-scheme` 与 `theme-color` 随主题更新。
 - **性能统计**：Navigation Timing API 计算本次加载耗时；运行时长按 `SITE_BIRTH` 实时计算。
-- **可访问性**：语义化标签、`aria-label` / `aria-live`、键盘焦点样式，移动端主要触控目标不小于 44px，并在 `prefers-reduced-motion` 下关闭动效。
+- **可访问性**：语义化标签、`aria-label` / `aria-live`、键盘焦点样式，移动端主要触控目标不小于 44px，浅色主题小字对比度达到 4.5:1，并在 `prefers-reduced-motion` 下关闭动效和平滑滚动。
 - **字体**：ZCOOL QingKe HuangYou 与 JetBrains Mono 均为本地自托管：ZCOOL 只包含当前展示文案所需的字符子集（约 41KB），JetBrains Mono 使用 latin 400/700（各约 21KB）。字体文件与 OFL 许可证存放在 `fonts/`，`<head>` 直接 `preload` 字体文件，`@font-face` 写在 `hot.css` 中，不再请求字体 CDN。新增或修改平台名称、分类名等展示文案后，运行 `node scripts/build-fonts.mjs` 重新生成子集；`check.mjs` 会校验子集与当前文案一致。正文仍使用系统中文无衬线字体回退。
 
 **浏览器兼容性**：建议使用较新版本的 Chrome、Edge、Safari 或 Firefox。页面使用了 `color-mix()`、`content-visibility`、`:has()`、View Transitions、`dvh`、`backdrop-filter`、`@starting-style` 等现代 CSS / 浏览器特性，旧版浏览器可能缺少部分视觉效果，但核心功能不受影响。
@@ -243,6 +256,7 @@ const ICONS = {
 - 视口外卡片的高度由 `contain-intrinsic-size` 估值，首次滚动到尚未渲染的区域时可能出现轻微的高度校正；卡片渲染后会记住实际高度。
 - 榜单更新依赖第三方接口，无法保证实时性或长期可用性。Codelife 是第三方聚合，实测其微博热榜快照可能滞后官方；微博官方接口需要特殊请求头和 CORS 代理，纯静态页面无法直接接入。
 - 会话缓存仅在当前标签页有效；数据超过 5 分钟后会在后台刷新，刷新失败时保留旧数据并标注日期；关闭标签页后缓存失效。
+- GitHub Pages 会缓存 CSS / JS；更新静态资源后请同步修改 `index.html` 中的 `?v=` 版本参数，避免用户继续使用旧资源。
 - 豆瓣、X 趋势、App Store、海外媒体 RSS、新浪热榜、澎湃新闻与中国新闻网依赖公共 CORS 代理；代理或上游不可用时，对应卡片会显示加载失败。
 - X 趋势来自 getdaytrends 的全球及国家/地区页面，不展示热度值；getdaytrends 未收录中国大陆等部分地区；条目链接指向 x.com，在中国大陆访问该站点可能需要额外的网络条件。
 - App Store 榜单来自 Apple iTunes RSS，地区名称与条目内容由 Apple 返回；不同地区商店的上架情况可能存在差异。

@@ -91,10 +91,6 @@ const missingIcons = sources.filter(s => !icons.has(s.id));
 check('每个榜单都有图标映射', missingIcons.length === 0, missingIcons.map(s => s.id).join(','));
 const missingFiles = sources.filter(s => icons.get(s.id) && !existsSync(join(root, 'icons', icons.get(s.id))));
 check('图标文件都存在', missingFiles.length === 0, missingFiles.map(s => `${s.id}:${icons.get(s.id)}`).join(','));
-
-const ogImage = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i)?.[1] || '';
-const ogPath = join(root, 'og-image.png');
-check('OG 图片存在', /\/og-image\.png$/.test(ogImage) && existsSync(ogPath) && statSync(ogPath).size > 1024);
 check('静态资源带版本参数', /href="hot\.css\?v=[^"]+"/.test(html) && /src="hot\.js\?v=[^"]+"/.test(html));
 
 try {

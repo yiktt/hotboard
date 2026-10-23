@@ -565,11 +565,10 @@ noscript .ns{max-width:520px;margin:80px auto;text-align:center;font-size:15px;c
 .src-alert .src-alert-x{width:28px;height:28px;padding:0;border-color:transparent;color:var(--muted);font-size:16px;line-height:1}
 .src-alert .src-alert-x:hover{color:var(--accent);background:var(--accent-soft)}
 
-/* 为右侧悬浮按钮预留净空，避免遮挡卡片内容 */
+/* 桌面端为悬浮按钮预留右侧净空；移动端不压缩信息流，按钮直接悬浮 */
 @media (max-width:1540px){#board{padding-right:70px}}
-@media (max-width:860px){#board{padding-right:64px}}
-@media (max-width:560px){#board{padding-right:54px}}
-@media (max-width:360px){#board{padding-right:48px}.floats{right:8px}}
+@media (max-width:860px){#board{padding-right:0}}
+@media (max-width:360px){.floats{right:8px}}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
   .tk-track{animation:none}

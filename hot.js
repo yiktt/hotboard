@@ -727,6 +727,28 @@ function friendlyError(reason){
   if (/^HTTP \d+/.test(reason)) return '数据源暂时不可用';
   return '榜单加载失败，请稍后重试';
 }
+/* 每帧只写入一张榜单，避免多个响应同帧渲染造成长帧 */
+const renderQueue = [];
+let renderScheduled = false;
+function flushRenderQueue(){
+  renderScheduled = false;
+  const run = renderQueue.shift();
+  if (run) run();
+  if (renderQueue.length){
+    renderScheduled = true;
+    requestAnimationFrame(flushRenderQueue);
+  }
+}
+function renderSlot(){
+  if (document.hidden) return Promise.resolve();
+  return new Promise(resolve => {
+    renderQueue.push(resolve);
+    if (!renderScheduled){
+      renderScheduled = true;
+      requestAnimationFrame(flushRenderQueue);
+    }
+  });
+}
 async function loadCard(src, el, { force = false, clear = false } = {}){
   const body = el.querySelector('.card-bd');
   const ft = el.querySelector('.card-ft');
@@ -748,6 +770,8 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
   let cached = readCache(src);
   if (cached){
     try{
+      await renderSlot();
+      if (seq !== src._seq) return { ok:false, superseded:true };
       renderCardData(src, el, cached.items, cached.t);
       scheduleTicker();
       if (!force && Date.now() - cached.t < REFRESH_MS){
@@ -768,6 +792,8 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
     if (seq !== src._seq) return { ok:false, superseded:true };
     if (!items.length) throw new Error('空数据');
     writeCache(src, items);
+    await renderSlot();
+    if (seq !== src._seq) return { ok:false, superseded:true };
     renderCardData(src, el, items, Date.now());
     scheduleTicker();
     if (qInput.value.trim()) scheduleSearch();
@@ -778,6 +804,8 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
     console.warn('[hotboard] 加载失败', src.id, reason);
     const fallback = cached || previous;
     if (fallback){
+      await renderSlot();
+      if (seq !== src._seq) return { ok:false, superseded:true };
       renderCardData(src, el, fallback.items, fallback.t);
       const ptime = el.querySelector('.ptime');
       ptime.textContent = (cached ? '缓存 · ' : '上次数据 · ') + fmtStamp(fallback.t);
@@ -786,6 +814,8 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
       if (qInput.value.trim()) scheduleSearch();
       return { ok:false, shown:true, stale:true, reason };
     }
+    await renderSlot();
+    if (seq !== src._seq) return { ok:false, superseded:true };
     body.innerHTML = `<div class="card-err"><p>${friendlyError(reason)}<span class="err-detail">${esc(reason)}</span></p><button class="retry">重新加载</button></div>`;
     el.querySelector('.ptime').textContent = '加载失败';
     el.querySelector('.ptime').title = reason;
@@ -1148,12 +1178,21 @@ document.addEventListener('keydown', e => {
 
 /* ================= 滚动播报 ================= */
 let tickerTimer = null;
+let tickerIdle = 0;
+let tickerIntroduced = false;
 function scheduleTicker(){
-  if (tickerTimer) return;
+  if (tickerTimer || tickerIdle) return;
   tickerTimer = setTimeout(() => {
     tickerTimer = null;
-    buildTicker();
-  }, 200);
+    if ('requestIdleCallback' in window){
+      tickerIdle = requestIdleCallback(() => {
+        tickerIdle = 0;
+        buildTicker();
+      }, { timeout: 1000 });
+    }else{
+      buildTicker();
+    }
+  }, 300);
 }
 function buildTicker(){
   const tops = SOURCES.filter(s => s._top);
@@ -1168,6 +1207,14 @@ function buildTicker(){
     return `<a class="tk" href="${esc(safeURL(s._top.url))}" target="_blank" rel="noopener noreferrer"><i class="${icon ? '' : 'noicon'}" style="--pc:${s.color}">${icon ? `<img src="${esc(icon)}" alt="" loading="lazy">` : ''}<b>${esc(s._top.char)}</b></i>${esc(s._top.title)}</a>`;
   }).join('');
   track.style.setProperty('--dur', Math.max(60, tops.length * 5) + 's');
+  if (!tickerIntroduced){
+    tickerIntroduced = true;
+    const bar = track.closest('.ticker');
+    if (bar){
+      bar.classList.add('tk-enter');
+      setTimeout(() => bar.classList.remove('tk-enter'), 700);
+    }
+  }
   track.innerHTML = `<div class="tk-group">${html}</div><div class="tk-group" aria-hidden="true">${html}</div>`;
   track.querySelectorAll('.tk i img').forEach(img => img.addEventListener('error', () => img.parentElement.classList.add('noicon')));
 }

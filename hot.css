@@ -126,7 +126,12 @@ html.theme-vt .tbtn svg{transition:none !important}
 .ticker{
   border-top:1px solid var(--line);border-bottom:1px solid var(--line);
   background:var(--card);display:flex;align-items:stretch;height:44px;overflow:hidden;
+  animation:ticker-in .4s ease-out .04s both;
 }
+@keyframes ticker-in{from{opacity:0}}
+/* 只淡入容器，避免跑马灯内几十个条目同时建立合成层 */
+.ticker.tk-enter .tk-view{animation:tk-fade .38s ease-out both}
+@keyframes tk-fade{from{opacity:0}}
 .tk-label{
   flex:none;display:flex;align-items:center;gap:8px;padding:0 18px;
   font-family:var(--font-display);font-size:15px;letter-spacing:2px;
@@ -279,7 +284,8 @@ body.searching .next{display:none}
 .card-refresh svg{width:14px;height:14px}
 
 .card-bd{flex:1;padding:2px 8px 8px}
-.ranklist{list-style:none}
+.ranklist{list-style:none;animation:list-in .4s cubic-bezier(.22,1,.36,1)}
+@keyframes list-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .rk{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:9px;transition:background .18s ease,transform .18s ease}
 .rk:hover{background:var(--accent-soft);transform:translateX(3px)}
 .rank{
@@ -325,14 +331,20 @@ body.searching .ranklist li.over{display:none}
 .region-select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .region-chev{position:absolute;right:8px;width:12px;height:12px;color:var(--muted);pointer-events:none}
 
-/* 骨架屏 */
+/* 骨架屏：单层扫光，避免每个占位块逐帧重绘背景 */
 .sk{display:flex;align-items:center;gap:9px;padding:8.5px 9px}
-.sk .b{border-radius:6px;background:linear-gradient(90deg,var(--soft) 25%,var(--line) 45%,var(--soft) 65%);background-size:300% 100%;animation:sh 1.3s ease infinite}
-.card:not(.reveal.in) .sk .b{animation-play-state:paused}
+.sk .b{border-radius:6px;background:var(--soft)}
+.card-bd:has(.sk){position:relative;overflow:hidden}
+.card-bd:has(.sk)::after{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:100%;pointer-events:none;
+  background:linear-gradient(90deg,transparent 20%,color-mix(in srgb,var(--line) 85%,transparent) 50%,transparent 80%);
+  transform:translateX(-100%);animation:sh 1.3s ease-in-out infinite;
+}
+.card:not(.reveal.in) .card-bd:has(.sk)::after{animation-play-state:paused}
+@keyframes sh{to{transform:translateX(100%)}}
 .sk .c{width:20px;height:20px;border-radius:6px;flex:none}
 .sk .t{height:12px;flex:1}
 .sk .h{width:38px;height:10px}
-@keyframes sh{0%{background-position:120% 0}100%{background-position:-120% 0}}
 /* 错误态 */
 .card-err{padding:34px 10px;text-align:center;color:var(--muted);font-size:13px}
 .card-err p{margin-bottom:12px}
@@ -572,6 +584,6 @@ noscript .ns{max-width:520px;margin:80px auto;text-align:center;font-size:15px;c
 @media (max-width:360px){.floats{right:8px}}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
-  .tk-track{animation:none}
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;transition-delay:0ms !important}
+  .tk-track,.ticker,.ticker.tk-enter .tk-view,.ranklist,.card-bd:has(.sk)::after{animation:none}
 }

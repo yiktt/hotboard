@@ -178,6 +178,12 @@ const ICONS = {
 };
 const iconURL = id => ICONS[id] ? `icons/${ICONS[id]}` : '';
 
+/* ================= 运行参数 ================= */
+const REFRESH_MS = 5 * 60 * 1000;
+const SHOW = 10;
+const LOAD_CONCURRENCY = 6;
+const CACHE_PREFIX = 'hotboard-cache-v1:';
+
 /* 时间戳绕过 CDN 缓存，减少榜单滞后 */
 const API_CODELIFE = id => `https://api.codelife.cc/api/top/list?lang=cn&id=${encodeURIComponent(id)}&_=${Date.now()}`;
 const API_HN       = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=20';
@@ -201,10 +207,6 @@ const API_SINA_HOT   = () => {
 };
 const API_NETEASE    = 'https://cors.redoc.ly/https://m.163.com/fe/api/hot/news/flow';
 const API_THEPAPER   = 'https://cors.redoc.ly/https://cache.thepaper.cn/contentapi/wwwIndex/rightSidebar';
-const REFRESH_MS = 5 * 60 * 1000;
-const SHOW = 10;
-const LOAD_CONCURRENCY = 6;
-const CACHE_PREFIX = 'hotboard-cache-v1:';
 
 /* ================= 工具 ================= */
 const $  = s => document.querySelector(s);
@@ -277,21 +279,8 @@ function writeCache(src, items){
     }catch(_){}
   }
 }
-async function getJSON(url, timeout = 12000, signal){
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeout);
-  const onAbort = () => ctrl.abort();
-  if (signal){ signal.aborted ? ctrl.abort() : signal.addEventListener('abort', onAbort, { once:true }); }
-  try{
-    const res = await fetch(url, { signal: ctrl.signal, headers:{ Accept:'application/json' } });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.json();
-  } finally {
-    clearTimeout(timer);
-    signal?.removeEventListener('abort', onAbort);
-  }
-}
-async function getText(url, timeout = 15000, accept = 'text/html', signal){
+/* 带超时与外部中止信号的 fetch；getJSON / getText 为其薄封装 */
+async function request(url, { timeout = 12000, accept = 'application/json', asText = false, signal } = {}){
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeout);
   const onAbort = () => ctrl.abort();
@@ -299,12 +288,14 @@ async function getText(url, timeout = 15000, accept = 'text/html', signal){
   try{
     const res = await fetch(url, { signal: ctrl.signal, headers:{ Accept: accept } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.text();
+    return asText ? await res.text() : await res.json();
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener('abort', onAbort);
   }
 }
+const getJSON = (url, timeout, signal) => request(url, { timeout, signal });
+const getText = (url, timeout, accept, signal) => request(url, { timeout, accept, asText:true, signal });
 function toast(msg){
   const box = $('#toasts');
   const el = document.createElement('div');
@@ -321,7 +312,7 @@ function tickClock(){
   $('#clock-time').innerHTML = `${pad(d.getHours())}<i>:</i>${pad(d.getMinutes())}<i>:</i>${pad(d.getSeconds())}`;
   $('#clock-date').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${WD[d.getDay()]}`;
 }
-tickClock(); setInterval(tickClock, 1000);
+tickClock();
 
 /* ================= 主题切换 ================= */
 let themeTarget = document.documentElement.dataset.theme || 'light';
@@ -379,7 +370,7 @@ function tickUptime(){
   const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
   $('#stat-uptime').textContent = `${d} 天 ${pad(h)} 时 ${pad(m)} 分 ${pad(sec)} 秒`;
 }
-tickUptime(); setInterval(tickUptime, 1000);
+tickUptime();
 
 function reportLoadTime(){
   const el = $('#stat-load');
@@ -388,10 +379,6 @@ function reportLoadTime(){
     const nav = performance.getEntriesByType('navigation')[0];
     if (nav && nav.loadEventEnd > 0) ms = nav.loadEventEnd - nav.startTime;
   }catch(e){}
-  if (ms === null && window.performance && performance.timing){
-    const t = performance.timing;
-    if (t.loadEventEnd && t.navigationStart) ms = t.loadEventEnd - t.navigationStart;
-  }
   if (ms === null) ms = performance.now();
   el.textContent = ms >= 1000 ? (ms / 1000).toFixed(2) + ' 秒' : Math.round(ms) + ' 毫秒';
 }
@@ -533,7 +520,7 @@ function buildCard(src){
     </footer>` : '';
   el.innerHTML = `
     <header class="card-hd">
-      <span class="pbadge${small}" style="--pc:${src.color}">
+      <span class="pbadge${small}" style="--pc:${esc(src.color)}">
         ${icon ? `<img src="${esc(icon)}" alt="" loading="lazy" decoding="async">` : ''}
         <b>${esc(src.char)}</b>
       </span>
@@ -554,6 +541,7 @@ function buildCard(src){
   const more = el.querySelector('.more');
   if (more) more.addEventListener('click', function(){
     const ol = el.querySelector('.ranklist');
+    if (!ol) return;
     if (ol.classList.contains('collapsed')) ensureFullList(src, el);
     const collapsed = ol.classList.toggle('collapsed');
     src._expanded = !collapsed;
@@ -749,6 +737,11 @@ function renderSlot(){
     }
   });
 }
+/* 等待渲染槽位，若等待期间被新请求取代则返回 false */
+async function renderIfCurrent(src, seq){
+  await renderSlot();
+  return src._seq === seq;
+}
 async function loadCard(src, el, { force = false, clear = false } = {}){
   const body = el.querySelector('.card-bd');
   const ft = el.querySelector('.card-ft');
@@ -770,8 +763,7 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
   let cached = readCache(src);
   if (cached){
     try{
-      await renderSlot();
-      if (seq !== src._seq) return { ok:false, superseded:true };
+      if (!(await renderIfCurrent(src, seq))) return { ok:false, superseded:true };
       renderCardData(src, el, cached.items, cached.t);
       scheduleTicker();
       if (!force && Date.now() - cached.t < REFRESH_MS){
@@ -792,8 +784,7 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
     if (seq !== src._seq) return { ok:false, superseded:true };
     if (!items.length) throw new Error('空数据');
     writeCache(src, items);
-    await renderSlot();
-    if (seq !== src._seq) return { ok:false, superseded:true };
+    if (!(await renderIfCurrent(src, seq))) return { ok:false, superseded:true };
     renderCardData(src, el, items, Date.now());
     scheduleTicker();
     if (qInput.value.trim()) scheduleSearch();
@@ -804,8 +795,7 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
     console.warn('[hotboard] 加载失败', src.id, reason);
     const fallback = cached || previous;
     if (fallback){
-      await renderSlot();
-      if (seq !== src._seq) return { ok:false, superseded:true };
+      if (!(await renderIfCurrent(src, seq))) return { ok:false, superseded:true };
       renderCardData(src, el, fallback.items, fallback.t);
       const ptime = el.querySelector('.ptime');
       ptime.textContent = (cached ? '缓存 · ' : '上次数据 · ') + fmtStamp(fallback.t);
@@ -814,8 +804,7 @@ async function loadCard(src, el, { force = false, clear = false } = {}){
       if (qInput.value.trim()) scheduleSearch();
       return { ok:false, shown:true, stale:true, reason };
     }
-    await renderSlot();
-    if (seq !== src._seq) return { ok:false, superseded:true };
+    if (!(await renderIfCurrent(src, seq))) return { ok:false, superseded:true };
     body.innerHTML = `<div class="card-err"><p>${friendlyError(reason)}<span class="err-detail">${esc(reason)}</span></p><button class="retry">重新加载</button></div>`;
     el.querySelector('.ptime').textContent = '加载失败';
     el.querySelector('.ptime').title = reason;
@@ -835,9 +824,11 @@ let activeLoads = 0;
 function enqueueLoad(src, el, opts = {}){
   if (!src || !el) return Promise.resolve({ ok:false, reason:'missing-card' });
   const pending = src._state === 'queued' || src._state === 'loading';
-  if (pending && !opts.supersede) return src._promise || Promise.resolve({ ok:false, superseded:true });
+  /* force / reload 请求抢占在途任务，避免手动刷新被未带 force 的旧加载短路 */
+  const preempt = pending && (opts.supersede || opts.force || opts.reload);
+  if (pending && !preempt) return src._promise || Promise.resolve({ ok:false, superseded:true });
   if (!pending && src._state === 'loaded' && !opts.force && !opts.reload && !opts.supersede) return Promise.resolve({ ok:true, skipped:true });
-  if (opts.supersede){
+  if (preempt){
     src._seq = (src._seq || 0) + 1;
     src._abort?.abort();
     for (let i = loadQueue.length - 1; i >= 0; i--){
@@ -934,10 +925,10 @@ CATS.forEach(cat => {
   label.className = 'cat-label reveal';
   label.dataset.cat = cat.id;
   label.innerHTML = `
-    <button class="cat-toggle" type="button" aria-expanded="true" aria-controls="grid-${cat.id}" title="收起${cat.name}">
+    <button class="cat-toggle" type="button" aria-expanded="true" aria-controls="grid-${esc(cat.id)}" title="收起${esc(cat.name)}">
       <span class="bar" aria-hidden="true"></span>
-      <span class="cat-name">${cat.name}</span>
-      <span class="cat-en">${cat.en}</span>
+      <span class="cat-name">${esc(cat.name)}</span>
+      <span class="cat-en">${esc(cat.en)}</span>
       <svg class="cat-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </button>`;
   board.appendChild(label);
@@ -1017,7 +1008,7 @@ function setActiveTab(cat, load){
 function buildTabs(){
   const all = [{ id:'all', name:'全部', n: SOURCES.length }, ...CATS.map(c => ({ id:c.id, name:c.name, n: SOURCES.filter(s => s.cat === c.id).length }))];
   tabsBox.innerHTML = all.map((t,i) =>
-    `<button class="tab${i===0?' on':''}" aria-pressed="${i===0}" data-cat="${t.id}">${t.name}<b>${t.n}</b></button>`).join('');
+    `<button class="tab${i===0?' on':''}" aria-pressed="${i===0}" data-cat="${esc(t.id)}">${esc(t.name)}<b>${t.n}</b></button>`).join('');
   tabsBox.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
     const searching = !!qInput.value.trim();
     if (searching) searchTabBefore = btn.dataset.cat;
@@ -1167,7 +1158,7 @@ $('#q-clr').addEventListener('click', () => {
   qInput.focus();
 });
 document.addEventListener('keydown', e => {
-  if (e.key === '/' && document.activeElement !== qInput){ e.preventDefault(); qInput.focus(); }
+  if (e.key === '/' && document.activeElement !== qInput && !dInfo.open){ e.preventDefault(); qInput.focus(); }
   if (e.key === 'Escape' && document.activeElement === qInput){
     clearTimeout(searchTimer);
     qInput.value='';
@@ -1204,7 +1195,7 @@ function buildTicker(){
   }
   const html = tops.map(s => {
     const icon = iconURL(s.id);
-    return `<a class="tk" href="${esc(safeURL(s._top.url))}" target="_blank" rel="noopener noreferrer"><i class="${icon ? '' : 'noicon'}" style="--pc:${s.color}">${icon ? `<img src="${esc(icon)}" alt="" loading="lazy">` : ''}<b>${esc(s._top.char)}</b></i>${esc(s._top.title)}</a>`;
+    return `<a class="tk" href="${esc(safeURL(s._top.url))}" target="_blank" rel="noopener noreferrer"><i class="${icon ? '' : 'noicon'}" style="--pc:${esc(s.color)}">${icon ? `<img src="${esc(icon)}" alt="" loading="lazy">` : ''}<b>${esc(s._top.char)}</b></i>${esc(s._top.title)}</a>`;
   }).join('');
   track.style.setProperty('--dur', Math.max(60, tops.length * 5) + 's');
   if (!tickerIntroduced){
@@ -1241,12 +1232,17 @@ if (tkView){
 /* ================= 加载与自动刷新 ================= */
 let nextAt = Date.now() + REFRESH_MS;
 let refreshing = false;
+let silentSkips = 0;
 async function refreshAll(silent, force = true, onlyLoaded = false){
   if (refreshing) return;
   if (silent && (qInput.value.trim() || dInfo.open)){
-    nextAt = Date.now() + REFRESH_MS;
-    return;
+    /* 搜索或弹窗打开期间暂缓自动刷新；连续 2 次后强制执行，避免数据无限期停更 */
+    if (++silentSkips < 3){
+      nextAt = Date.now() + REFRESH_MS;
+      return;
+    }
   }
+  silentSkips = 0;
   refreshing = true;
   const btn = $('#btn-refresh');
   btn.classList.add('spin');
@@ -1282,18 +1278,32 @@ async function refreshAll(silent, force = true, onlyLoaded = false){
 }
 $('#btn-refresh').addEventListener('click', () => refreshAll());
 
-setInterval(() => {
+/* 单一定时器驱动时钟、运行时长与刷新倒计时；后台标签页跳过 DOM 写入，回前台由 visibilitychange 补刷 */
+function tickSecond(){
+  if (document.hidden) return;
+  tickClock();
+  tickUptime();
   const left = Math.max(0, nextAt - Date.now());
   $('#cd').textContent = pad(Math.floor(left/60000)) + ':' + pad(Math.floor(left%60000/1000));
-  if (left <= 0 && !document.hidden) refreshAll(true, true, true);
-}, 1000);
+  if (left <= 0) refreshAll(true, true, true);
+}
+setInterval(tickSecond, 1000);
 
 /* 切回标签页时若已过期则刷新已加载卡片 */
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && Date.now() > nextAt) refreshAll(true, true, true);
 });
 window.addEventListener('offline', () => toast('网络已断开，数据可能不是最新'));
-window.addEventListener('online',  () => toast('网络已恢复'));
+window.addEventListener('online', () => {
+  toast('网络已恢复');
+  /* 恢复联网立即补刷：已过刷新点，或存在断网导致的失败榜单 */
+  if (Date.now() > nextAt || SOURCES.some(s => s._state === 'error')) refreshAll(true, true, true);
+});
+/* 后台标签页暂停顶栏火线动画 */
+const heatline = document.querySelector('.heatline');
+document.addEventListener('visibilitychange', () => {
+  if (heatline) heatline.style.animationPlayState = document.hidden ? 'paused' : '';
+});
 
 /* ================= 一键到顶 / 到底 ================= */
 const fTop = $('#f-top'), fBot = $('#f-bottom');

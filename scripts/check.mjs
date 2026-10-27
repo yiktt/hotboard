@@ -25,7 +25,7 @@ const inlineHash = createHash('sha256').update(inlineScript.replace(/\r\n/g, '\n
 check('CSP 内联脚本哈希与主题脚本一致', cspHash === inlineHash, `CSP hash ${cspHash || '(missing)'} 与脚本 hash ${inlineHash} 不一致`);
 check('CSP 包含 Referrer-Policy', /<meta\s+name="referrer"\s+content="strict-origin-when-cross-origin"/i.test(html));
 const apiHosts = new Set();
-for (const apiBlock of js.matchAll(/const API_[A-Z_]+[\s\S]*?(?=\nconst |\n\/\*|$)/g)) {
+for (const apiBlock of js.matchAll(/const API_[A-Z_]+[\s\S]*?(?=\nconst |\n\/\*|\nfunction |\nasync function |$)/g)) {
   for (const url of apiBlock[0].matchAll(/https:\/\/[^'"`\s]+/g)) {
     try { apiHosts.add(new URL(url[0]).host); } catch {}
   }

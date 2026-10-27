@@ -24,6 +24,7 @@
   --dot:rgba(27,30,35,.06); --wm:rgba(27,30,35,.10);
   --shadow:0 12px 32px -16px rgba(27,30,35,.22);
   --r1:#e8442e; --r2:#ef6c1a; --r3:#f5a623;
+  --chip:#fbfbf7; /* 徽标底色：两种主题下都保持浅色芯片，衬托彩色 logo */
   color-scheme:light;
 }
 [data-theme="dark"]{
@@ -63,6 +64,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;border:2px solid var(--bg)}
 ::-webkit-scrollbar-track{background:transparent}
+
+/* 跳转链接：仅键盘聚焦时出现 */
+.skip{
+  position:fixed;left:14px;top:-52px;z-index:300;
+  padding:9px 18px;border-radius:8px;background:var(--ink);color:var(--bg);
+  font-size:13px;letter-spacing:1px;transition:top .2s ease;
+}
+.skip:focus{top:12px}
 
 /* 顶部燃动火线 */
 .heatline{
@@ -150,7 +159,7 @@ html.theme-vt .tbtn svg{transition:none !important}
   font-style:normal;font-family:var(--font-display);font-size:11px;line-height:1;
   width:22px;height:22px;padding:0;border-radius:6px;flex:none;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
-  color:var(--pc);background:#fbfbf7;
+  color:var(--pc);background:var(--chip);
   border:1px solid color-mix(in srgb,var(--pc) 28%,transparent);
 }
 .tk i img{width:74%;height:74%;object-fit:contain;display:block}
@@ -259,7 +268,7 @@ body.searching .next{display:none}
   width:38px;height:38px;border-radius:11px;flex:none;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
   font-family:var(--font-display);font-size:17px;line-height:1;color:var(--pc);
-  background:#fbfbf7;
+  background:var(--chip);
   border:1px solid color-mix(in srgb,var(--pc) 28%,transparent);
   box-shadow:0 4px 12px -6px color-mix(in srgb,var(--pc) 55%,transparent);
   transition:transform .25s cubic-bezier(.34,1.56,.64,1);
@@ -499,7 +508,7 @@ noscript .ns{max-width:520px;margin:80px auto;text-align:center;font-size:15px;c
   .topbar{padding:26px 0 16px}
   .brand h1{font-size:27px}
   .clock .time{font-size:21px}
-  .search input{width:170px}
+  .search input{width:170px;font-size:16px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
   .pmeta p{flex-wrap:wrap;white-space:normal;row-gap:1px}
   .ptime{flex:none}

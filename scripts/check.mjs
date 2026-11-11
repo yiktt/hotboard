@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
@@ -33,6 +33,8 @@ for (const apiBlock of js.matchAll(/const API_[A-Z_]+[\s\S]*?(?=\nconst |\n\/\*|
 const missingHosts = [...apiHosts].filter(host => !csp.includes('https://' + host));
 check('CSP connect-src 覆盖所有 API 主机', missingHosts.length === 0, `缺少 ${missingHosts.join(', ')}`);
 check('CSP 字体仅允许本站', /font-src\s+'self'(?:;|$)/.test(csp));
+/* style-src 收窄到属性级：元素级禁止内联，style 属性经 style-src-attr 放行 */
+check('CSP style-src 收窄至属性级', /style-src-attr\s+'unsafe-inline'/.test(csp) && !/style-src\s+[^;]*'unsafe-inline'/.test(csp));
 
 const fontFiles = ['fonts/zcool-ui.woff2', 'fonts/jetbrains-mono-400.woff2', 'fonts/jetbrains-mono-700.woff2'];
 check('字体文件存在且非空', fontFiles.every(file => {
@@ -91,6 +93,11 @@ const missingIcons = sources.filter(s => !icons.has(s.id));
 check('每个榜单都有图标映射', missingIcons.length === 0, missingIcons.map(s => s.id).join(','));
 const missingFiles = sources.filter(s => icons.get(s.id) && !existsSync(join(root, 'icons', icons.get(s.id))));
 check('图标文件都存在', missingFiles.length === 0, missingFiles.map(s => `${s.id}:${icons.get(s.id)}`).join(','));
+/* SVG 图标以内联文档上下文之外的方式加载（img），但仍防御性扫描脚本与事件属性 */
+const badSvg = readdirSync(join(root, 'icons'))
+  .filter(file => file.endsWith('.svg'))
+  .filter(file => /<script[\s>]|onload\s*=|onerror\s*=|foreignObject/i.test(readFileSync(join(root, 'icons', file), 'utf8')));
+check('SVG 图标不含脚本', badSvg.length === 0, badSvg.join(','));
 check('静态资源带版本参数', /href="hot\.css\?v=[^"]+"/.test(html) && /src="hot\.js\?v=[^"]+"/.test(html));
 
 try {

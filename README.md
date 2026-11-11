@@ -55,9 +55,9 @@
 ### 体验与可访问性
 
 - **响应式布局** — 桌面、平板、手机适配；移动端主要触控目标 44px，悬浮按钮不压缩信息流。
-- **主题与动效** — 跟随系统深浅色，手动切换会记忆；支持 View Transition 交叉淡化，并尊重 `prefers-reduced-motion`。
+- **主题与动效** — 跟随系统深浅色（未手动选择过主题时实时跟随系统切换），手动切换会记忆；支持 View Transition 交叉淡化，并尊重 `prefers-reduced-motion`（跑马灯停摆时可手动横向滚动）。
 - **本地资源** — 字体和 46 个平台图标本地托管，不请求字体 CDN；图标失败时回退为品牌字符徽标。
-- **可访问性** — 语义化标签、键盘焦点、ARIA 状态、原生对话框焦点回收；浅色主题小字对比度达到 4.5:1。
+- **可访问性** — 语义化标签、键盘焦点、ARIA 状态（分类折叠与展开按钮带 `aria-expanded`，刷新中带 `aria-busy`）、原生对话框焦点回收；浅色主题小字对比度达到 4.5:1。
 - **站点状态** — 页脚显示站点运行时长与本次页面加载耗时。
 - **纯静态** — 原生 HTML / CSS / JavaScript，无框架、无后端、无构建步骤。
 
@@ -137,7 +137,7 @@ python -m http.server 8080
 node scripts/check.mjs
 ```
 
-检查 CSP 内联脚本哈希、所有 API 主机覆盖、字体文件与子集文本一致性、字体预载、`SHOW` 与折叠 CSS 一致性、榜单数量与唯一 id、分类、默认地区、图标映射与 `hot.js` 语法。GitHub Actions 在 push / PR 时自动运行。
+检查 CSP 内联脚本哈希、样式指令收窄、所有 API 主机覆盖、字体文件与子集文本一致性、字体预载、`SHOW` 与折叠 CSS 一致性、榜单数量与唯一 id、分类、默认地区、图标映射、SVG 图标脚本扫描与 `hot.js` 语法。GitHub Actions 在 push / PR 时自动运行。
 
 <a id="structure"></a>
 ## 项目结构
@@ -150,7 +150,7 @@ hotboard/
 ├── icons/       # 46 个平台的官方图标（PNG / SVG / JPG / ICO）
 ├── fonts/       # 自托管字体子集、字符清单与 OFL 许可证
 ├── scripts/
-│   ├── check.mjs      # 零依赖：CSP、字体子集、榜单配置、图标与语法检查
+│   ├── check.mjs      # 零依赖：CSP、字体子集、榜单配置、图标、SVG 脚本与语法检查
 │   ├── build-fonts.mjs # 重新生成 ZCOOL 子集并下载 JetBrains Mono
 │   └── font-text.mjs  # 从配置提取使用展示字体的文案字符
 ├── .github/
@@ -238,9 +238,9 @@ const ICONS = {
 ## 技术说明
 
 - **技术栈**：HTML5 / CSS3 / JavaScript（ES2020+），无第三方运行时依赖。
-- **数据请求**：`fetch` + `AbortController` 超时控制，新的地区切换会取消旧请求；首屏附近的卡片在视口加载，滚动、分类、搜索或手动刷新时补载；隐藏分类卡片不会被提前请求，最多 6 路并发。
-- **缓存与渲染**：按 `id + region` 使用 `sessionStorage` 缓存；先渲染缓存再后台刷新。列表默认只生成前 10 条 DOM，展开时补全，收起或清空搜索后回收。卡片使用 `content-visibility: auto` 跳过视口外渲染。
-- **安全策略**：`index.html` 通过 meta CSP 限制脚本、样式、字体与 fetch 目标；字体仅允许本站；并设置 `strict-origin-when-cross-origin`。远程文本统一 HTML 转义，外部链接仅允许 http/https，并拒绝带用户名或密码的 URL。
+- **数据请求**：`fetch` + `AbortController` 超时控制，新的地区切换会取消旧请求，键盘方向键连续切换地区会自动去抖合并为一次请求；首屏附近的卡片在视口加载，滚动、分类、搜索或手动刷新时补载；隐藏分类卡片不会被提前请求，最多 6 路并发。
+- **缓存与渲染**：按 `id + region` 使用 `sessionStorage` 缓存；先渲染缓存再后台刷新。列表默认只生成前 10 条 DOM，展开时补全，收起或清空搜索后回收。卡片使用 `content-visibility: auto` 跳过视口外渲染。渲染队列每帧只写入一张榜单；在 `requestAnimationFrame` 不可用的环境（窗口被遮挡、部分内嵌 WebView）由看门狗定时器接管出队，避免页面停留骨架屏。
+- **安全策略**：`index.html` 通过 meta CSP 限制脚本、样式、字体与 fetch 目标；字体仅允许本站；元素级内联样式被禁止，`style` 属性经 `style-src-attr` 单独放行；并设置 `strict-origin-when-cross-origin`。远程文本统一 HTML 转义，外部链接仅允许 http/https，并拒绝带用户名或密码的 URL；热度值仅接受字符串与数字（异常形状不展示，超长截断），所有 SVG 图标经 CI 扫描确保不含脚本。
 - **主题系统**：CSS 自定义属性 + `data-theme`，内联脚本在样式加载前确定主题；支持 View Transition 交叉淡化，不支持时降级为瞬时切换。
 - **分类与地区**：分类标题按钮使用 `aria-expanded` / `aria-controls`；分类筛选使用 `role="group"` + `aria-pressed`；地区选择器会同步卡片副标题和官方入口。
 - **本地字体**：ZCOOL QingKe HuangYou 与 JetBrains Mono 均为本地自托管。ZCOOL 仅包含当前展示文案所需的字符子集（约 41KB），JetBrains Mono 使用 latin 400/700（各约 21KB）；新增展示文案后运行 `node scripts/build-fonts.mjs`。
